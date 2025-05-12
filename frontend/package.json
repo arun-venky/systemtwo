@@ -11,6 +11,7 @@
     "lint": "eslint src/**/*.{ts,vue}"
   },
   "dependencies": {
+    "@heroicons/vue": "^2.1.1",
     "@xstate/inspect": "^0.8.0",
     "@xstate/vue": "^2.0.0",
     "axios": "^1.6.2",
