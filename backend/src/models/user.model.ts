@@ -14,11 +14,17 @@ export interface IUser extends Document {
   verificationTokenExpiry?: Date;
   resetToken?: string;
   resetTokenExpiry?: Date;
+  accessToken?: string;
+  accessTokenExpiry?: Date;
+  refreshToken?: string;
+  refreshTokenExpiry?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
   generateResetToken(): Promise<string>;
   generateVerificationToken(): Promise<string>;
+  setTokens(accessToken: string, refreshToken: string): Promise<void>;
+  clearTokens(): Promise<void>;
 }
 
 // Create User schema
@@ -70,6 +76,22 @@ const UserSchema: Schema = new Schema(
       type: Date,
       default: undefined,
     },
+    accessToken: {
+      type: String,
+      default: undefined,
+    },
+    accessTokenExpiry: {
+      type: Date,
+      default: undefined,
+    },
+    refreshToken: {
+      type: String,
+      default: undefined,
+    },
+    refreshTokenExpiry: {
+      type: Date,
+      default: undefined,
+    },
   },
   {
     timestamps: true,
@@ -108,6 +130,24 @@ UserSchema.methods.generateVerificationToken = async function (): Promise<string
   this.verificationToken = verificationToken;
   this.verificationTokenExpiry = new Date(Date.now() + 24 * 3600000); // 24 hours
   return verificationToken;
+};
+
+// Method to set tokens
+UserSchema.methods.setTokens = async function(accessToken: string, refreshToken: string): Promise<void> {
+  this.accessToken = accessToken;
+  this.accessTokenExpiry = new Date(Date.now() + 3600000); // 1 hour for access token
+  this.refreshToken = refreshToken;
+  this.refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 3600000); // 7 days for refresh token
+  await this.save();
+};
+
+// Method to clear tokens
+UserSchema.methods.clearTokens = async function(): Promise<void> {
+  this.accessToken = undefined;
+  this.accessTokenExpiry = undefined;
+  this.refreshToken = undefined;
+  this.refreshTokenExpiry = undefined;
+  await this.save();
 };
 
 // Create and export User model

@@ -124,6 +124,9 @@ export const login = async (req: Request, res: Response) => {
     const token = generateToken(user);
     const refreshToken = generateRefreshToken(user);
 
+    // Store tokens in database
+    await user.setTokens(token, refreshToken);
+
     // Log the login action
     await AuditLog.create({
       userId: user._id,
@@ -162,10 +165,18 @@ export const refreshToken = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
     }
+
+    // Check if refresh token is valid
+    if (!user.refreshToken || !user.refreshTokenExpiry || user.refreshTokenExpiry < new Date()) {
+      return res.status(401).json({ message: 'Refresh token expired or invalid' });
+    }
     
     // Generate new tokens
     const token = generateToken(user);
     const refreshToken = generateRefreshToken(user);
+    
+    // Store new tokens in database
+    await user.setTokens(token, refreshToken);
     
     // Send response
     res.status(200).json({
@@ -183,28 +194,25 @@ export const logout = async (req: AuthRequest, res: Response) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     
-    if (token) {
+    if (token && req.user) {
+      // Clear tokens from database
+      await req.user.clearTokens();
+      
       // Log the logout action
       await AuditLog.create({
-        userId: req.user?._id,
+        userId: req.user._id,
         action: 'logout',
         resource: 'auth',
-        details: `User ${req.user?.username} logged out`,
+        details: `User ${req.user.username} logged out`,
       });
       
       logAudit(
-        req.user?._id?.toString() || 'system',
+        req.user._id.toString(),
         'logout',
         'auth',
-        `User ${req.user?.username} logged out`
+        `User ${req.user.username} logged out`
       );
       
-      // In a real application, you would:
-      // 1. Add the token to a blacklist in Redis
-      // 2. Set an expiration time for the blacklisted token
-      // 3. Check the blacklist during token validation
-      
-      // For now, we'll just return success
       res.status(200).json({ message: 'Logged out successfully' });
     } else {
       res.status(400).json({ message: 'No token provided' });

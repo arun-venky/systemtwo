@@ -27,6 +27,14 @@ export const verifyToken = async (req: AuthRequest, res: Response, next: NextFun
       if (!user) {
         return res.status(401).json({ message: 'Unauthorized - Invalid token' });
       }
+
+      // Check if token matches stored token and is not expired
+      if (!user.accessToken || 
+          user.accessToken !== token || 
+          !user.accessTokenExpiry || 
+          user.accessTokenExpiry < new Date()) {
+        return res.status(401).json({ message: 'Unauthorized - Token expired or invalid' });
+      }
       
       req.user = user;
       next();
@@ -56,6 +64,14 @@ export const verifyRefreshToken = async (req: Request, res: Response, next: Next
       
       if (!user) {
         return res.status(401).json({ message: 'Invalid refresh token' });
+      }
+
+      // Check if refresh token matches stored token and is not expired
+      if (!user.refreshToken || 
+          user.refreshToken !== refreshToken || 
+          !user.refreshTokenExpiry || 
+          user.refreshTokenExpiry < new Date()) {
+        return res.status(401).json({ message: 'Invalid or expired refresh token' });
       }
       
       req.body.userId = decoded.id;
