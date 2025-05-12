@@ -44,6 +44,55 @@ export default {
           900: '#581c87',
         },
       },
+      opacity: {
+        '15': '0.15',
+        '35': '0.35',
+        '65': '0.65',
+        '85': '0.85',
+      },
+      zIndex: {
+        '60': '60',
+        '70': '70',
+        '80': '80',
+        '90': '90',
+        '100': '100',
+      },
+      maxWidth: {
+        '8xl': '88rem',
+        '9xl': '96rem',
+      },
+      minHeight: {
+        '10': '2.5rem',
+        '12': '3rem',
+        '16': '4rem',
+      },
+      spacing: {
+        '18': '4.5rem',
+        '22': '5.5rem',
+        '72': '18rem',
+        '80': '20rem',
+        '96': '24rem',
+      },
+      borderRadius: {
+        'xl': '1rem',
+        '2xl': '1.5rem',
+        '3xl': '2rem',
+      },
+      fontSize: {
+        'xxs': '0.625rem',
+      },
+      height: {
+        'screen-75': '75vh',
+        'screen-50': '50vh',
+      },
+      width: {
+        'screen-75': '75vw',
+        'screen-50': '50vw',
+      },
+      boxShadow: {
+        'inner-md': 'inset 0 4px 6px -1px rgba(0, 0, 0, 0.1), inset 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'inner-lg': 'inset 0 10px 15px -3px rgba(0, 0, 0, 0.1), inset 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+      },
     },
   },
   plugins: [],
