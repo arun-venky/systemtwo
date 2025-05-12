@@ -23,7 +23,7 @@
               >
                 <component 
                   :is="item.icon" 
-                  class="mr-3 h-6 w-6"
+                  class="mr-3 h-5 w-5"
                   aria-hidden="true"
                 />
                 {{ item.name }}
@@ -49,7 +49,7 @@
                   class="ml-auto bg-gray-600 p-1 rounded-full text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-700 focus:ring-white"
                   title="Logout"
                 >
-                  <ArrowRightOnRectangleIcon class="h-6 w-6" />
+                  <ArrowRightOnRectangleIcon class="h-5 w-5" />
                   <span class="sr-only">Logout</span>
                 </button>
               </div>
@@ -67,8 +67,8 @@
         class="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
       >
         <span class="sr-only">Open menu</span>
-        <Bars3Icon v-if="!mobileMenuOpen" class="h-6 w-6" />
-        <XMarkIcon v-else class="h-6 w-6" />
+        <Bars3Icon v-if="!mobileMenuOpen" class="h-5 w-5" />
+        <XMarkIcon v-else class="h-5 w-5" />
       </button>
     </div>
     
@@ -90,7 +90,7 @@
           ]"
           v-if="!item.roles || userHasAccess(item.roles)"
         >
-          <component :is="item.icon" class="inline-block h-6 w-6 mr-2" />
+          <component :is="item.icon" class="inline-block h-5 w-5 mr-2" />
           {{ item.name }}
         </router-link>
         
@@ -98,7 +98,7 @@
           @click="logout" 
           class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none"
         >
-          <ArrowRightOnRectangleIcon class="inline-block h-6 w-6 mr-2" />
+          <ArrowRightOnRectangleIcon class="inline-block h-5 w-5 mr-2" />
           Logout
         </button>
       </div>
