@@ -98,7 +98,7 @@
           </Button>
         </form>
 
-        <!-- Social Sign In (Optional) -->
+        <!-- Social Sign In -->
         <div class="mt-6">
           <div class="relative">
             <div class="absolute inset-0 flex items-center">
