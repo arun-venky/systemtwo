@@ -1,5 +1,8 @@
 import { createMachine, assign } from 'xstate'
 import api from '../utils/api'
+import { useToast } from 'vue-toastification'
+
+const toast = useToast()
 
 // Define interfaces
 export interface Page {
@@ -39,7 +42,7 @@ export type PageEvent =
   | { type: 'CREATE' }
   | { type: 'EDIT'; id: string }
   | { type: 'DELETE'; id: string }
-  | { type: 'SAVE'; data: any }
+  | { type: 'SAVE'; data: Partial<Page> }
   | { type: 'CANCEL' }
   | { type: 'RETRY' }
 
@@ -68,10 +71,20 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
       idle: {
         on: {
           FETCH: { target: 'loading' },
-          CREATE: { target: 'creating' },
+          CREATE: { 
+            target: 'creating',
+            actions: assign({
+              formData: {
+                title: '',
+                content: '',
+                slug: '',
+                isPublished: false
+              }
+            })
+          },
           EDIT: { 
             target: 'editing',
-            actions: ['selectPage']
+            actions: ['selectPage', 'initializeFormData']
           },
           DELETE: { 
             target: 'deleting',
@@ -94,32 +107,27 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
         }
       },
       creating: {
-        entry: assign({ 
-          formData: { title: '', content: '', slug: '' },
-          selectedPage: null 
-        }),
         on: {
           SAVE: { 
             target: 'loading',
             actions: ['createPage']
           },
-          CANCEL: { target: 'idle' }
+          CANCEL: {
+            target: 'idle',
+            actions: ['clearForm']
+          }
         }
       },
       editing: {
-        entry: assign({
-          formData: (context) => ({ 
-            title: context.selectedPage?.title || '',
-            content: context.selectedPage?.content || '',
-            slug: context.selectedPage?.slug || ''
-          })
-        }),
         on: {
           SAVE: { 
             target: 'loading',
             actions: ['updatePage']
           },
-          CANCEL: { target: 'idle' }
+          CANCEL: {
+            target: 'idle',
+            actions: ['clearForm']
+          }
         }
       },
       deleting: {
@@ -127,7 +135,7 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
           src: 'deletePage',
           onDone: {
             target: 'loading',
-            actions: ['removePage']
+            actions: ['handleDeleteSuccess']
           },
           onError: {
             target: 'error',
@@ -151,8 +159,8 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
           }
           return []
         },
-        isLoading: (_) => false,
-        errorMessage: (_) => null
+        isLoading: false,
+        errorMessage: null
       }),
       selectPage: assign({
         selectedPage: (context, event) => {
@@ -162,29 +170,34 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
           return null
         }
       }),
-      removePage: assign({
-        pages: (context) => {
-          if (context.selectedPage && context.selectedPage._id) {
-            return context.pages.filter(page => page._id !== context.selectedPage?._id)
-          }
-          return context.pages
-        },
-        selectedPage: (_) => null
+      initializeFormData: assign({
+        formData: (context) => ({
+          ...context.selectedPage
+        })
+      }),
+      clearForm: assign({
+        selectedPage: null,
+        formData: {},
+        errorMessage: null
+      }),
+      handleDeleteSuccess: assign({
+        pages: (context) => context.pages.filter(page => page._id !== context.selectedPage?._id),
+        selectedPage: null,
+        errorMessage: null
       }),
       setError: assign({
         errorMessage: (_, event) => {
           if ('data' in event) {
             const error = event.data.message || 'Operation failed'
-            console.error('Page Error:', error)
+            toast.error(error)
             return error
           }
-          console.error('Page Error: Operation failed')
-          return 'Operation failed'
+          const error = 'Operation failed'
+          toast.error(error)
+          return error
         },
-        isLoading: (_) => false
-      }),
-      createPage: () => {}, // Handled in service
-      updatePage: () => {}  // Handled in service
+        isLoading: false
+      })
     },
     services: {
       fetchPages: async () => {
@@ -192,70 +205,45 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
           const response = await api.get('/pages')
           return response.data
         } catch (error) {
-          console.error('Page Error: Failed to fetch pages', error)
+          console.error('Failed to fetch pages:', error)
           throw error
         }
       },
       deletePage: async (context) => {
-        if (!context.selectedPage || !context.selectedPage._id) {
-          console.error('Page Error: No page selected for deletion')
-          return Promise.reject('No page selected')
+        if (!context.selectedPage?._id) {
+          throw new Error('No page selected')
         }
         
         try {
-          const response = await api.delete(`/pages/${context.selectedPage?._id}`)
+          const response = await api.delete(`/pages/${context.selectedPage._id}`)
+          toast.success('Page deleted successfully')
           return response.data
         } catch (error) {
-          console.error('Page Error: Failed to delete page', error)
+          console.error('Failed to delete page:', error)
           throw error
         }
       },
       createPage: async (context) => {
-        // Validate page data
-        if (!context.formData.title || !context.formData.slug) {
-          console.error('Page Error: Missing required fields (title or slug)')
-          return Promise.reject('Missing required fields')
-        }
-
-        // Validate slug format
-        const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-        if (!slugRegex.test(context.formData.slug)) {
-          console.error('Page Error: Invalid slug format')
-          return Promise.reject('Invalid slug format')
-        }
-
         try {
-          const response = await api.post('/pages', {
-            ...context.formData,
-            isPublished: false,
-            order: context.pages.length
-          })
+          const response = await api.post('/pages', context.formData)
+          toast.success('Page created successfully')
           return response.data
         } catch (error) {
-          console.error('Page Error: Failed to create page', error)
+          console.error('Failed to create page:', error)
           throw error
         }
       },
       updatePage: async (context) => {
-        if (!context.selectedPage) {
-          console.error('Page Error: No page selected for update')
-          return Promise.reject('No page selected')
+        if (!context.selectedPage?._id) {
+          throw new Error('No page selected')
         }
 
-        // Validate update data
-        if (context.formData.slug) {
-          const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-          if (!slugRegex.test(context.formData.slug)) {
-            console.error('Page Error: Invalid slug format')
-            return Promise.reject('Invalid slug format')
-          }
-        }
-        
         try {
           const response = await api.put(`/pages/${context.selectedPage._id}`, context.formData)
+          toast.success('Page updated successfully')
           return response.data
         } catch (error) {
-          console.error('Page Error: Failed to update page', error)
+          console.error('Failed to update page:', error)
           throw error
         }
       }
