@@ -10,7 +10,7 @@
             </div>
             <nav class="mt-5 flex-1 px-2 space-y-1">
               <router-link 
-                v-for="(item, index) in menuItems" 
+                v-for="(item, index) in visibleMenuItems" 
                 :key="index"
                 :to="item.path"
                 class="group flex items-center px-2 py-2 text-sm font-medium rounded-md"
@@ -19,7 +19,6 @@
                     ? 'bg-gray-900 text-white' 
                     : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                 ]"
-                v-if="!item.roles || userHasAccess(item.roles)"
               >
                 <component 
                   :is="item.icon" 
@@ -100,7 +99,7 @@
     >
       <div class="px-2 pt-2 pb-3 space-y-1">
         <router-link 
-          v-for="(item, index) in menuItems"
+          v-for="(item, index) in visibleMenuItems"
           :key="index"
           :to="item.path"
           @click="mobileMenuOpen = false"
@@ -110,7 +109,6 @@
               ? 'bg-gray-900 text-white' 
               : 'text-gray-300 hover:bg-gray-700 hover:text-white'
           ]"
-          v-if="!item.roles || userHasAccess(item.roles)"
         >
           {{ item.name }}
         </router-link>
@@ -141,6 +139,16 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
+// import { 
+//   HomeIcon, 
+//   DocumentIcon, 
+//   UsersIcon, 
+//   //MenuIcon, 
+//   NumberedListIcon,
+//   ShieldCheckIcon, 
+//   LockClosedIcon, 
+//   UserIcon 
+// } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const toast = useToast()
@@ -162,49 +170,9 @@ const userRole = computed(() => {
   return 'User'
 })
 
-// Menu items configuration
-const menuItems = [
-  {
-    name: 'Dashboard',
-    path: '/dashboard',
-    icon: 'HomeIcon',
-  },
-  {
-    name: 'Pages',
-    path: '/pages',
-    icon: 'DocumentIcon',
-    roles: ['Admin', 'Editor']
-  },
-  {
-    name: 'Menus',
-    path: '/menus',
-    icon: 'MenuIcon',
-    roles: ['Admin']
-  },
-  {
-    name: 'Users',
-    path: '/users',
-    icon: 'UsersIcon',
-    roles: ['Admin']
-  },
-  {
-    name: 'Roles',
-    path: '/roles',
-    icon: 'ShieldCheckIcon',
-    roles: ['Admin']
-  },
-  {
-    name: 'Security',
-    path: '/security',
-    icon: 'LockClosedIcon',
-    roles: ['Admin']
-  },
-  {
-    name: 'Profile',
-    path: '/profile',
-    icon: 'UserIcon',
-  }
-]
+const visibleMenuItems = computed(() => {
+    return menuItems.filter(item => !item.roles || userHasAccess(item.roles))
+})
 
 // Check if user has access based on roles
 const userHasAccess = (roles: string[]) => {
@@ -221,6 +189,9 @@ const logout = () => {
   toast.success('You have been logged out')
   router.push('/login')
 }
+
+
+
 
 // Define icons as components
 const HomeIcon = {
@@ -278,4 +249,48 @@ const UserIcon = {
     </svg>
   `
 }
+
+// Menu items configuration
+const menuItems = [
+  {
+    name: 'Dashboard',
+    path: '/dashboard',
+    icon: HomeIcon,
+  },
+  {
+    name: 'Pages',
+    path: '/pages',
+    icon: DocumentIcon,
+    roles: ['Admin', 'Editor']
+  },
+  {
+    name: 'Menus',
+    path: '/menus',
+    icon: MenuIcon,
+    roles: ['Admin']
+  },
+  {
+    name: 'Users',
+    path: '/users',
+    icon: UsersIcon,
+    roles: ['Admin']
+  },
+  {
+    name: 'Roles',
+    path: '/roles',
+    icon: ShieldCheckIcon,
+    roles: ['Admin']
+  },
+  {
+    name: 'Security',
+    path: '/security',
+    icon: LockClosedIcon,
+    roles: ['Admin']
+  },
+  {
+    name: 'Profile',
+    path: '/profile',
+    icon: UserIcon,
+  }
+]
 </script>

@@ -85,7 +85,7 @@ export const createMenuMachine = (initialContext: Partial<MenuContext> = {}) => 
       ...initialContext
     },
     states: {
-      idle: {
+      idle: {       
         on: {
           FETCH: { target: 'loading' },
           CREATE: { target: 'creating' },
@@ -114,6 +114,7 @@ export const createMenuMachine = (initialContext: Partial<MenuContext> = {}) => 
         }
       },
       creating: {
+        tags: ['creating'],
         entry: assign({ 
           formData: { name: '', items: [] },
           selectedMenu: null 

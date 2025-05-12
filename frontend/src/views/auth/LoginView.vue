@@ -75,9 +75,9 @@ import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMachine } from '@xstate/vue'
 import { createAuthMachine } from '../../machines/authMachine'
-import Button from '../../components/ui/Button.vue'
-import FormInput from '../../components/ui/FormInput.vue'
-import Card from '../../components/ui/Card.vue'
+import Button from '../../components/ui/button.vue'
+import FormInput from '../../components/ui/formInput.vue'
+import Card from '../../components/ui/card.vue'
 
 const route = useRoute()
 

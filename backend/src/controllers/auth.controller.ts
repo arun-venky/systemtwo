@@ -207,7 +207,7 @@ export const logout = async (req: AuthRequest, res: Response) => {
       });
       
       logAudit(
-        req.user._id.toString(),
+        req.user?._id?.toString() || 'system',
         'logout',
         'auth',
         `User ${req.user.username} logged out`
