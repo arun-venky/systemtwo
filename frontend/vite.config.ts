@@ -12,5 +12,16 @@ export default defineConfig({
   },
   server: {
     port: 8080
+  },
+  css: {
+    postcss: './postcss.config.js'
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'es2020'
+    }
+  },
+  build: {
+    target: 'es2020'
   }
 })
