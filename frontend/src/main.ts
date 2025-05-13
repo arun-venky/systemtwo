@@ -6,6 +6,7 @@ import Toast from 'vue-toastification'
 import './assets/index.css'
 import 'vue-toastification/dist/index.css'
 import { setupInspect } from './utils/setupInspect'
+import { useAuthStore } from './store/auth.store'
 
 // Setup XState inspector in development mode
 if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_XSTATE_INSPECT === 'true') {
@@ -13,6 +14,7 @@ if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_XSTATE_INSPECT === 'true'
 }
 
 const app = createApp(App)
+const pinia = createPinia()
 
 // Toast configuration
 const toastOptions = {
@@ -30,8 +32,12 @@ const toastOptions = {
   rtl: false
 }
 
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
 app.use(Toast, toastOptions)
+
+// Initialize auth store
+const authStore = useAuthStore()
+authStore.initializeFromStorage()
 
 app.mount('#app')

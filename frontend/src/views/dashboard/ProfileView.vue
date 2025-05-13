@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import Card from '../../components/ui/Card.vue'
+import Card from '../../components/ui/card.vue'
 
 // Get user data from localStorage
 const user = computed(() => {

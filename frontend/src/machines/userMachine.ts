@@ -1,26 +1,8 @@
+import { UserContext } from '@/store/models';
+import { useUserStore } from '../store/user.store'
 import { createMachine, assign } from 'xstate'
-import api from '../utils/api'
 
 // Define interfaces
-export interface User {
-  _id: string;
-  username: string;
-  email: string;
-  password: string;
-  role: string;
-  isVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UserContext {
-  users: User[];
-  selectedUser: User | null;
-  errorMessage: string | null;
-  isLoading: boolean;
-  formData: Partial<User>;
-}
-
 export type UserEvent =
   | { type: 'FETCH' }
   | { type: 'CREATE' }
@@ -40,6 +22,7 @@ export type UserState =
 
 // Create user management machine
 export const createUserMachine = (initialContext: Partial<UserContext> = {}) => {
+  const userStore = useUserStore();
   return createMachine<UserContext, UserEvent, UserState>({
     id: 'userManagement',
     initial: 'idle',
@@ -166,67 +149,25 @@ export const createUserMachine = (initialContext: Partial<UserContext> = {}) => 
         },
         isLoading: (_) => false
       }),
-      createUser: () => {}, // Handled in service
-      updateUser: () => {}  // Handled in service
     },
     services: {
       fetchUsers: async () => {
-        try {
-          const response = await api.get('/users')
-          return response.data
-        } catch (error) {
-          console.error('User Error: Failed to fetch users', error)
-          throw error
-        }
-      },
-      deleteUser: async (context) => {
-        if (!context.selectedUser || !context.selectedUser._id) {
-          console.error('User Error: No user selected for deletion')
-          return Promise.reject('No user selected')
-        }
-        
-        try {
-          const response = await api.delete(`/users/${context.selectedUser?._id}`)
-          return response.data
-        } catch (error) {
-          console.error('User Error: Failed to delete user', error)
-          throw error
-        }
+        return await userStore.fetchUsers();
       },
       createUser: async (context) => {
-        // Validate user data
-        if (!context.formData?.username || !context.formData?.email || !context.formData?.password) {
-          console.error('User Error: Missing required fields')
-          return Promise.reject('Missing required fields')
-        }
-
-        try {
-          const response = await api.post('/users', context.formData)
-          return response.data
-        } catch (error) {
-          console.error('User Error: Failed to create user', error)
-          throw error
-        }
+        return await userStore.createUser(context.formData);
       },
       updateUser: async (context) => {
-        if (!context.selectedUser || !context.selectedUser._id) {
-          console.error('User Error: No user selected for update')
-          return Promise.reject('No user selected')
+        if (!context.selectedUser?._id) {
+          throw new Error('No user selected');
         }
-
-        // Validate update data
-        if (!context.formData.username && !context.formData.email) {
-          console.error('User Error: No fields to update')
-          return Promise.reject('No fields to update')
+        return await userStore.updateUser(context.selectedUser._id, context.formData);
+      },
+      deleteUser: async (context) => {
+        if (!context.selectedUser?._id) {
+          throw new Error('No user selected');
         }
-        
-        try {
-          const response = await api.put(`/users/${context.selectedUser?._id}`, context.formData)
-          return response.data
-        } catch (error) {
-          console.error('User Error: Failed to update user', error)
-          throw error
-        }
+        return await userStore.deleteUser(context.selectedUser._id);
       }
     }
   })

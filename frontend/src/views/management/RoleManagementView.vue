@@ -1,20 +1,301 @@
 <template>
   <div class="min-h-screen bg-gray-50 py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h1 class="text-3xl font-bold text-gray-900">Role Management</h1>
-      <div class="mt-8">
-        <div class="bg-white shadow sm:rounded-lg">
-          <div class="px-4 py-5 sm:p-6">
-            <p class="text-sm text-gray-500">
-              Role management functionality coming soon...
-            </p>
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Role Management</h1>
+        <Button
+          variant="primary"
+          @click="raiseEvent('CREATE')"
+          :disabled="isCurrentState('creating')"
+        >
+          Create Role
+        </Button>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="isCurrentState('loading')" class="flex justify-center items-center py-12">
+        <Spinner size="lg" />
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="isCurrentState('error')" class="bg-red-50 p-4 rounded-md mb-6">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <ExclamationCircleIcon class="h-5 w-5 text-red-400" />
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">Error</h3>
+            <div class="mt-2 text-sm text-red-700">
+              {{ state.context.errorMessage }}
+            </div>
+            <div class="mt-4">
+              <Button variant="danger" @click="raiseEvent('RETRY')">Retry</Button>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Role List -->
+      <div v-else class="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul class="divide-y divide-gray-200">
+          <li v-for="role in state.context.roles" :key="role._id">
+            <div class="px-4 py-4 sm:px-6">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <ShieldCheckIcon class="h-6 w-6 text-gray-400" />
+                  </div>
+                  <div class="ml-4">
+                    <h2 class="text-lg font-medium text-gray-900">{{ role.name }}</h2>
+                    <p class="text-sm text-gray-500">
+                      {{ role.permissions.length }} permissions
+                    </p>
+                  </div>
+                </div>
+                <div class="flex space-x-2">
+                  <Button
+                    variant="ghost"
+                    @click="openPermissionsModal(role)"
+                  >
+                    Permissions
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    @click="openUsersModal(role)"
+                  >
+                    Users
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    @click="duplicateRole(role)"
+                  >
+                    Duplicate
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    @click="editRole(role)"
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="danger"
+                    @click="deleteRole(role)"
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Create/Edit Role Modal -->
+      <Modal
+        v-if="isCurrentState('creating') || isCurrentState('editing')"
+        :title="isCurrentState('creating') ? 'Create Role' : 'Edit Role'"
+        @close="raiseEvent('CANCEL')"
+      >
+        <form @submit.prevent="saveRole">
+          <div class="space-y-4">
+            <div>
+              <label class="form-label">Name</label>
+              <input
+                type="text"
+                v-model="state.context.formData.name"
+                class="form-input"
+                required
+              />
+            </div>
+            <div>
+              <label class="form-label">Permissions</label>
+              <div class="space-y-2">
+                <div v-for="(permission, index) in state.context.formData.permissions" :key="index" class="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    v-model="permission.resource"
+                    placeholder="Resource"
+                    class="form-input flex-1"
+                  />
+                  <select
+                    v-model="permission.actions"
+                    multiple
+                    class="form-select flex-1"
+                  >
+                    <option value="create">Create</option>
+                    <option value="read">Read</option>
+                    <option value="update">Update</option>
+                    <option value="delete">Delete</option>
+                  </select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    @click="removePermission(index)"
+                  >
+                    Remove
+                  </Button>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  @click="addPermission"
+                >
+                  Add Permission
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end space-x-2 mt-6">
+            <Button
+              type="button"
+              variant="ghost"
+              @click="raiseEvent('CANCEL')"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+            >
+              {{ isCurrentState('creating') ? 'Create' : 'Save' }}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <!-- Permissions Modal -->
+      <Modal
+        v-if="showPermissionsModal"
+        title="Role Permissions"
+        @close="showPermissionsModal = false"
+      >
+        <div class="space-y-4">
+          <div v-for="(permission, index) in selectedRolePermissions" :key="index" class="flex items-center space-x-2">
+            <span class="font-medium">{{ permission.resource }}</span>
+            <div class="flex space-x-1">
+              <Badge
+                v-for="action in permission.actions"
+                :key="action"
+                variant="info"
+              >
+                {{ action }}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <!-- Users Modal -->
+      <Modal
+        v-if="showUsersModal"
+        title="Role Users"
+        @close="showUsersModal = false"
+      >
+        <div class="space-y-4">
+          <div class="flex space-x-2">
+            <input
+              type="text"
+              v-model="userSearchQuery"
+              placeholder="Search users..."
+              class="form-input flex-1"
+            />
+            <Button
+              variant="primary"
+              @click="assignUsers"
+              :disabled="!selectedUsers.length"
+            >
+              Assign Selected
+            </Button>
+            <Button
+              variant="danger"
+              @click="removeUsers"
+              :disabled="!selectedUsers.length"
+            >
+              Remove Selected
+            </Button>
+          </div>
+          <div class="space-y-2">
+            <div v-for="user in filteredUsers" :key="user._id" class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                :value="user._id"
+                v-model="selectedUsers"
+                class="form-checkbox"
+              />
+              <span>{{ user.username }}</span>
+              <span class="text-gray-500">({{ user.email }})</span>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <!-- Delete Confirmation Modal -->
+      <Modal
+        v-if="isCurrentState('deleting')"
+        title="Delete Role"
+        @close="raiseEvent('CANCEL')"
+      >
+        <div class="space-y-4">
+          <p class="text-sm text-gray-500">
+            Are you sure you want to delete this role? This action cannot be undone.
+          </p>
+          <div class="flex justify-end space-x-2">
+            <Button
+              variant="ghost"
+              @click="raiseEvent('CANCEL')"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              @click="confirmDelete"
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// Role management functionality will be implemented later
+import { onMounted } from 'vue';
+import { ShieldCheckIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
+import Button from '../../components/ui/button.vue';
+import Modal from '../../components/ui/modal.vue';
+import Spinner from '../../components/ui/spinner.vue';
+import Badge from '../../components/ui/badge.vue';
+import { useRoleManagement } from '../../composables/useRoleManagement';
+
+const {
+  state,
+  showPermissionsModal,
+  showUsersModal,
+  selectedRole,
+  selectedRolePermissions,
+  userSearchQuery,
+  selectedUsers,
+  users,
+  filteredUsers,
+  isCurrentState,
+  raiseEvent,
+  openPermissionsModal,
+  openUsersModal,
+  assignUsers,
+  removeUsers,
+  duplicateRole,
+  editRole,
+  deleteRole,
+  confirmDelete,
+  addPermission,
+  removePermission,
+  saveRole
+} = useRoleManagement();
+
+// Fetch roles on mount
+onMounted(() => {
+  raiseEvent('FETCH');
+});
 </script> 

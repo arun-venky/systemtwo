@@ -34,7 +34,7 @@
       </Card>
     </div>
     
-    <div v-else>
+    <div>
       <!-- Welcome section -->
       <div class="section">
         <Card>

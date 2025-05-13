@@ -1,88 +1,187 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import { useToast } from 'vue-toastification'
-import HomeView from '../views/HomeView.vue'
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../store/auth.store'
+import type { RouteRecordRaw } from 'vue-router'
+
+// Layout components
+import DashboardLayout from '../router/layouts/DashboardLayout.vue';
+
+// Auth views
 import LoginView from '../views/auth/LoginView.vue'
 import SignupView from '../views/auth/SignupView.vue'
+import ForgotPasswordView from '../views/auth/ForgotPasswordView.vue'
+import ResetPasswordView from '../views/auth/ResetPasswordView.vue'
+
+// Dashboard views
 import DashboardView from '../views/dashboard/DashboardView.vue'
-import ProfileView from '../views/dashboard/ProfileView.vue'
+
+// Management views
+import RoleManagementView from '../views/management/RoleManagementView.vue'
+import PageManagementView from '../views/management/PageManagementView.vue'
+import SecurityManagementView from '../views/management/SecurityManagementView.vue'
+import MenuManagementView from '../views/management/MenuManagementView.vue'
+import UserManagementView from '../views/management/UserManagementView.vue'
+
+// Error views
 import ForbiddenView from '../views/errors/ForbiddenView.vue'
 import NotFoundView from '../views/errors/NotFoundView.vue'
+import UnauthorizedView from '../views/errors/UnauthorizedView.vue'
 
-const toast = useToast()
+// Import layouts
+import AdminLayout from './layouts/AdminLayout.vue'
 
-// Route definitions
-const routes: Array<RouteRecordRaw> = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'Home',
-    component: HomeView,
-    meta: { requiresAuth: false }
+    component: DashboardLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'dashboard',
+        component: DashboardView,
+        meta: { title: 'Dashboard' }
+      },
+      {
+        path: 'management',
+        meta: { requiresAdmin: true },
+        children: [
+          {
+            path: 'roles',
+            name: 'role-management',
+            component: RoleManagementView,
+            meta: { 
+              title: 'Role Management',
+              permissions: ['roles', 'read']
+            }
+          },
+          {
+            path: 'pages',
+            name: 'page-management',
+            component: PageManagementView,
+            meta: { 
+              title: 'Page Management',
+              permissions: ['pages', 'read']
+            }
+          },
+          {
+            path: 'security',
+            name: 'security-management',
+            component: SecurityManagementView,
+            meta: { 
+              title: 'Security Management',
+              permissions: ['security', 'read']
+            }
+          }
+        ]
+      }
+    ]
   },
   {
-    path: '/login',
-    name: 'Login',
-    component: LoginView,
-    meta: { requiresAuth: false }
+    path: '/auth',
+    children: [
+      {
+        path: 'login',
+        name: 'login',
+        component: LoginView,
+        meta: { title: 'Login' }
+      },
+      {
+        path: 'signup',
+        name: 'signup',
+        component: SignupView,
+        meta: { title: 'Sign Up' }
+      },
+      {
+        path: 'forgot-password',
+        name: 'forgot-password',
+        component: ForgotPasswordView,
+        meta: {
+          requiresAuth: false
+        }
+      },
+      {
+        path: 'reset-password',
+        name: 'reset-password',
+        component: ResetPasswordView,
+        meta: {
+          requiresAuth: false
+        }
+      }
+    ]
   },
   {
-    path: '/signup',
-    name: 'Signup',
-    component: SignupView,
-    meta: { requiresAuth: false }
-  },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: DashboardView,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/profile',
-    name: 'Profile',
-    component: ProfileView,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/users',
-    name: 'UserManagement',
-    component: () => import('../views/management/UserManagementView.vue'),
-    meta: { requiresAuth: true, requiresRole: ['Admin'] }
-  },
-  {
-    path: '/pages',
-    name: 'PageManagement',
-    component: () => import('../views/management/PageManagementView.vue'),
-    meta: { requiresAuth: true, requiresRole: ['Admin', 'Editor'] }
-  },
-  {
-    path: '/menus',
-    name: 'MenuManagement',
-    component: () => import('../views/management/MenuManagementView.vue'),
-    meta: { requiresAuth: true, requiresRole: ['Admin'] }
-  },
-  {
-    path: '/roles',
-    name: 'RoleManagement',
-    component: () => import('../views/management/RoleManagementView.vue'),
-    meta: { requiresAuth: true, requiresRole: ['Admin'] }
-  },
-  {
-    path: '/security',
-    name: 'SecurityManagement',
-    component: () => import('../views/management/SecurityManagementView.vue'),
-    meta: { requiresAuth: true, requiresRole: ['Admin'] }
-  },
-  {
-    path: '/forbidden',
-    name: 'Forbidden',
-    component: ForbiddenView,
-    meta: { requiresAuth: false }
+    path: '/unauthorized',
+    name: 'unauthorized',
+    component: UnauthorizedView,
+    meta: {
+      requiresAuth: false
+    }
   },
   {
     path: '/:pathMatch(.*)*',
-    name: 'NotFound',
+    name: 'not-found',
     component: NotFoundView,
-    meta: { requiresAuth: false }
+    meta: { title: 'Not Found' }
+  },
+  {
+    path: '/admin',
+    component: AdminLayout,
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true
+    },
+    children: [
+      {
+        path: 'menus',
+        name: 'menu-management',
+        component: MenuManagementView,
+        meta: {
+          title: 'Menu Management',
+          icon: 'MenuIcon',
+          requiresPermission: 'menu:manage'
+        }
+      },
+      {
+        path: 'users',
+        name: 'user-management',
+        component: UserManagementView,
+        meta: {
+          title: 'User Management',
+          icon: 'UserIcon',
+          requiresPermission: 'user:manage'
+        }
+      },
+      {
+        path: 'roles',
+        name: 'role-management',
+        component: RoleManagementView,
+        meta: {
+          title: 'Role Management',
+          icon: 'ShieldCheckIcon',
+          requiresPermission: 'role:manage'
+        }
+      },
+      {
+        path: 'security',
+        name: 'security-management',
+        component: SecurityManagementView,
+        meta: {
+          title: 'Security Management',
+          icon: 'LockClosedIcon',
+          requiresPermission: 'security:manage'
+        }
+      },
+      {
+        path: 'pages',
+        name: 'page-management',
+        component: PageManagementView,
+        meta: {
+          title: 'Page Management',
+          icon: 'DocumentIcon',
+          requiresPermission: 'page:manage'
+        }
+      }
+    ]
   }
 ]
 
@@ -99,33 +198,48 @@ const router = createRouter({
 })
 
 // Navigation guard
-router.beforeEach((to, _from, next) => {
-  const isAuthenticated = !!localStorage.getItem('token')
-  const userDataString = localStorage.getItem('user')
-  const userData = userDataString ? JSON.parse(userDataString) : null
-  
-  // Routes that require authentication
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    toast.warning('Please log in to access this page')
-    return next({ name: 'Login', query: { redirect: to.fullPath } })
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
+  const requiresPermission = to.meta.requiresPermission as string | undefined
+
+  // Set page title
+  document.title = `${to.meta.title} | Your App Name`
+
+  // Check authentication status
+  const isAuthenticated = await authStore.checkAuth()
+
+  // Check if route requires authentication
+  if (requiresAuth && !isAuthenticated) {
+    next({ name: 'login', query: { redirect: to.fullPath } })
+    return
   }
-  
-  // Routes that require specific roles
-  if (to.meta.requiresRole && isAuthenticated && userData) {
-    const requiredRoles = to.meta.requiresRole as string[]
-    const userRole = userData.role ? userData.role.name : null
-    
-    if (!userRole || !requiredRoles.includes(userRole)) {
-      toast.error('You do not have permission to access this page')
-      return next({ name: 'Forbidden' })
-    }
+
+  // Check if route requires admin role
+  if (requiresAdmin && !authStore.isAdmin) {
+    next({ 
+      name: 'unauthorized',
+      query: { 
+        requiredRole: 'admin',
+        path: to.fullPath 
+      }
+    })
+    return
   }
-  
-  // Prevent authenticated users from accessing login/signup pages
-  if ((to.name === 'Login' || to.name === 'Signup') && isAuthenticated) {
-    return next({ name: 'Dashboard' })
+
+  // Check if route requires specific permission
+  if (requiresPermission && !authStore.hasPermission(requiresPermission)) {
+    next({ 
+      name: 'unauthorized',
+      query: { 
+        requiredPermission: requiresPermission,
+        path: to.fullPath 
+      }
+    })
+    return
   }
-  
+
   next()
 })
 

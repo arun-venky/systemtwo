@@ -47,7 +47,7 @@ authRoutes.post(
 // Login route with validation
 authRoutes.post(
   '/login',
-  validateRequest([
+  [
     body('email')
       .isEmail()
       .withMessage('Must be a valid email address')
@@ -55,7 +55,8 @@ authRoutes.post(
     body('password')
       .notEmpty()
       .withMessage('Password is required')
-  ]),
+  ],
+  //validateRequest,
   login
 );
 

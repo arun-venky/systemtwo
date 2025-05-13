@@ -1,23 +1,9 @@
+import { AxiosError } from 'axios'
+import { AuthContext, AuthResponse } from '@/store/models';
+import { useAuthStore } from '../store/auth.store'
 import { createMachine, assign } from 'xstate'
-import api from '../utils/api'
-import { AxiosError, AxiosResponse } from 'axios'
 
 // Define interfaces
-export interface AuthContext {
-  user: any | null
-  errorMessage: string | null
-  redirectTo: string | null
-  tokenExpiry: number | null
-  isNetworkError: boolean
-}
-
-interface AuthResponse {
-  token: string
-  refreshToken: string
-  user: any
-  message?: string
-}
-
 interface ErrorResponse {
   message: string
   [key: string]: any
@@ -45,6 +31,8 @@ export type AuthState =
 
 // Create authentication machine            
 export const createAuthMachine = (initialContext: Partial<AuthContext> = {}) => {
+  const authStore = useAuthStore()
+
   return createMachine<AuthContext, AuthEvent, AuthState>({
     id: 'auth',
     initial: 'idle',
@@ -149,10 +137,7 @@ export const createAuthMachine = (initialContext: Partial<AuthContext> = {}) => 
         user: (_, event) => {
           if ('data' in event && event.data) {
             const { token, refreshToken, user } = event.data as AuthResponse
-            //const tokenData = JSON.parse(atob(token.split('.')[1]))
-            localStorage.setItem('token', token)
-            localStorage.setItem('refreshToken', refreshToken)
-            localStorage.setItem('user', JSON.stringify(user))
+            authStore.setAuth({ user, token, refreshToken })
             sessionStorage.removeItem('lastLoginAttempt')
             sessionStorage.removeItem('lastSignupAttempt')
             return user
@@ -238,10 +223,8 @@ export const createAuthMachine = (initialContext: Partial<AuthContext> = {}) => 
           // or show a specific UI for network errors
         }
       },
-      clearUser: (_) => {
-        localStorage.removeItem('token')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('user')
+      clearUser: () => {
+        authStore.logout()
       },
       redirectAfterLogin: (context) => {
         if (context.redirectTo) {
@@ -260,20 +243,8 @@ export const createAuthMachine = (initialContext: Partial<AuthContext> = {}) => 
         
         const { email, password } = event
         sessionStorage.setItem('lastLoginAttempt', 'true')
-        console.log('Login email:', email);
-        console.log('Login password:', password);
-        
-        return api.post('/auth/login', { email, password })
-          .then((response: AxiosResponse) => response.data)
-          .catch((error: AxiosError<ErrorResponse>) => {
-            console.error('Auth Error: Login failed', {
-              error,
-              config: error.config,
-              status: error.response?.status,
-              data: error.response?.data
-            })
-            throw error
-          })
+
+        return authStore.login(email, password)
       },
       signupService: (_, event) => {
         if (event.type !== 'SIGNUP') {
@@ -284,12 +255,7 @@ export const createAuthMachine = (initialContext: Partial<AuthContext> = {}) => 
         const { username, email, password } = event
         sessionStorage.setItem('lastSignupAttempt', 'true')
         
-        return api.post('/auth/signup', { username, email, password })
-          .then(response => response.data)
-          .catch(error => {
-            console.error('Auth Error: Signup failed', error)
-            throw error
-          })
+        return authStore.signup(username, email, password)       
       },
       checkTokenService: async () => {
         const token = localStorage.getItem('token')
@@ -299,10 +265,7 @@ export const createAuthMachine = (initialContext: Partial<AuthContext> = {}) => 
         }
         
         try {
-          const response = await api.post('/auth/refresh', {
-            refreshToken: localStorage.getItem('refreshToken')
-          })
-          return response.data
+          return await authStore.getRefreshToken()
         } catch (error) {
           console.error('Auth Error: Token refresh failed', error)
           return Promise.reject('Token refresh failed')

@@ -1,39 +1,8 @@
+import { PageContext } from '@/store/models';
+import { usePageStore } from '../store/page.store'
 import { createMachine, assign } from 'xstate'
-import api from '../utils/api'
 
 // Define interfaces
-export interface Page {
-  _id: string;
-  title: string;
-  content: string;
-  slug: string;
-  isPublished: boolean;
-  publishedAt?: string;
-  publishedBy?: string;
-  draft?: {
-    content: string;
-    lastSaved: string;
-    savedBy: string;
-  };
-  versions: Array<{
-    content: string;
-    publishedAt: string;
-    publishedBy: string;
-  }>;
-  parentId?: string;
-  order: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PageContext {
-  pages: Page[];
-  selectedPage: Page | null;
-  errorMessage: string | null;
-  isLoading: boolean;
-  formData: Partial<Page>;
-}
-
 export type PageEvent =
   | { type: 'FETCH' }
   | { type: 'CREATE' }
@@ -53,6 +22,7 @@ export type PageState =
 
 // Create page management machine
 export const createPageMachine = (initialContext: Partial<PageContext> = {}) => {
+  const pageStore = usePageStore();
   return createMachine<PageContext, PageEvent, PageState>({
     id: 'pageManagement',
     initial: 'idle',
@@ -61,7 +31,12 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
       selectedPage: null,
       errorMessage: null,
       isLoading: false,
-      formData: {},
+      formData: {
+        title: '',
+        content: '',
+        slug: '',
+        parentId: '',
+      },
       ...initialContext
     },
     states: {
@@ -95,7 +70,12 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
       },
       creating: {
         entry: assign({ 
-          formData: { title: '', content: '', slug: '' },
+          formData: { 
+            title: '', 
+            content: '', 
+            slug: '',
+            parentId: '',
+          },
           selectedPage: null 
         }),
         on: {
@@ -111,7 +91,8 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
           formData: (context) => ({ 
             title: context.selectedPage?.title || '',
             content: context.selectedPage?.content || '',
-            slug: context.selectedPage?.slug || ''
+            slug: context.selectedPage?.slug || '',
+            parentId: context.selectedPage?.parentId || ''
           })
         }),
         on: {
@@ -182,15 +163,12 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
           return 'Operation failed'
         },
         isLoading: (_) => false
-      }),
-      createPage: () => {}, // Handled in service
-      updatePage: () => {}  // Handled in service
+      }),      
     },
     services: {
       fetchPages: async () => {
         try {
-          const response = await api.get('/pages')
-          return response.data
+          return await pageStore.fetchPages()
         } catch (error) {
           console.error('Page Error: Failed to fetch pages', error)
           throw error
@@ -203,8 +181,7 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
         }
         
         try {
-          const response = await api.delete(`/pages/${context.selectedPage?._id}`)
-          return response.data
+          return await pageStore.deletePage(context.selectedPage._id)
         } catch (error) {
           console.error('Page Error: Failed to delete page', error)
           throw error
@@ -225,12 +202,7 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
         }
 
         try {
-          const response = await api.post('/pages', {
-            ...context.formData,
-            isPublished: false,
-            order: context.pages.length
-          })
-          return response.data
+          return await pageStore.createPage(context.formData)
         } catch (error) {
           console.error('Page Error: Failed to create page', error)
           throw error
@@ -252,8 +224,7 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
         }
         
         try {
-          const response = await api.put(`/pages/${context.selectedPage._id}`, context.formData)
-          return response.data
+          return await pageStore.updatePage(context.selectedPage._id, context.formData)          
         } catch (error) {
           console.error('Page Error: Failed to update page', error)
           throw error

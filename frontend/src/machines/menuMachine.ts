@@ -1,52 +1,8 @@
+import { MenuItem, MenuContext, MenuResponse } from '@/store/models';
+import { useMenuStore } from '../store/menu.store'
 import { createMachine, assign } from 'xstate'
-import api from '../utils/api'
 
 // Define interfaces
-export interface MenuItem {
-  _id?: string;
-  label: string;
-  url: string;
-  roles: string[];
-  order: number;
-}
-
-export interface Menu {
-  _id: string;
-  name: string;
-  items: MenuItem[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Role {
-  _id: string;
-  name: string;
-  description: string;
-}
-
-export interface MenuFormData {
-  name: string
-  items: MenuItem[]
-}
-
-export interface MenuContext {
-  menus: Menu[];
-  roles: Role[];
-  selectedMenu: Menu | null;
-  errorMessage: string | null;
-  isLoading: boolean;
-  formData: {
-    name: string;
-    items: MenuItem[];
-  };
-}
-
-interface MenuResponse {
-  menus: any[]
-  roles: any[]
-  message?: string
-}
-
 export type MenuEvent =
   | { type: 'FETCH' }
   | { type: 'CREATE' }
@@ -70,6 +26,8 @@ export type MenuState =
   | { value: 'deleting'; context: MenuContext }
   | { value: 'error'; context: MenuContext }
 
+const menuStore = useMenuStore();
+
 // Create menu management machine
 export const createMenuMachine = (initialContext: Partial<MenuContext> = {}) => {
   return createMachine<MenuContext, MenuEvent, MenuState>({
@@ -82,6 +40,7 @@ export const createMenuMachine = (initialContext: Partial<MenuContext> = {}) => 
       errorMessage: null,
       isLoading: false,
       formData: { name: '', items: [] },
+      menuItems: [],
       ...initialContext
     },
     states: {
@@ -247,93 +206,33 @@ export const createMenuMachine = (initialContext: Partial<MenuContext> = {}) => 
         isLoading: (_) => false
       }),
       createMenu: async (context) => {
-        // Validate menu items
-        const validItems = context.formData.items.map(item => ({
-          ...item,
-          url: item.url.startsWith('/') ? item.url : `/${item.url}`
-        }))
-        
-        const response = await api.post('/menus', {
-          ...context.formData,
-          items: validItems
-        })
-        return response.data
+        return await menuStore.createMenu(context.formData)
       },
       updateMenu: async (context) => {
-        if (!context.selectedMenu || !context.selectedMenu._id) return Promise.reject('No menu selected')
-        
-        // Validate menu items
-        const validItems = context.formData.items.map(item => ({
-          ...item,
-          url: item.url.startsWith('/') ? item.url : `/${item.url}`
-        }))
-        
-        const response = await api.put(`/menus/${context.selectedMenu?._id}`, {
-          ...context.formData,
-          items: validItems
-        })
-        return response.data
+        if (context.selectedMenu?._id) {
+          return await menuStore.updateMenu(context.selectedMenu._id, context.formData)
+        }
+        throw new Error('No menu selected')
       }
     },
     services: {
       fetchData: async () => {
-        try {
-          // Fetch menus
-          const menusResponse = await api.get('/menus')
-          
-          // Fetch roles for menu item visibility
-          const rolesResponse = await api.get('/roles')
-          
-          return {
-            menus: menusResponse.data,
-            roles: rolesResponse.data
-          }
-        } catch (error) {
-          console.error('Menu Error: Failed to fetch data', error)
-          throw error
-        }
+        return await menuStore.fetchMenus()
       },
       deleteMenu: async (context) => {
-        if (!context.selectedMenu || !context.selectedMenu._id) {
-          console.error('Menu Error: No menu selected for deletion')
-          return Promise.reject('No menu selected')
+        if (context.selectedMenu?._id) {
+          return await menuStore.deleteMenu(context.selectedMenu._id)
         }
-        
-        try {
-          const response = await api.delete(`/menus/${context.selectedMenu?._id}`)
-          return response.data
-        } catch (error) {
-          console.error('Menu Error: Failed to delete menu', error)
-          throw error
-        }
+        throw new Error('No menu selected')
       },
       createMenu: async (context) => {
-        // Validate menu items
-        const validItems = context.formData.items.map(item => ({
-          ...item,
-          url: item.url.startsWith('/') ? item.url : `/${item.url}`
-        }))
-        
-        const response = await api.post('/menus', {
-          ...context.formData,
-          items: validItems
-        })
-        return response.data
+        return await menuStore.createMenu(context.formData)
       },
       updateMenu: async (context) => {
-        if (!context.selectedMenu || !context.selectedMenu._id) return Promise.reject('No menu selected')
-        
-        // Validate menu items
-        const validItems = context.formData.items.map(item => ({
-          ...item,
-          url: item.url.startsWith('/') ? item.url : `/${item.url}`
-        }))
-        
-        const response = await api.put(`/menus/${context.selectedMenu?._id}`, {
-          ...context.formData,
-          items: validItems
-        })
-        return response.data
+        if (context.selectedMenu?._id) {
+          return await menuStore.updateMenu(context.selectedMenu._id, context.formData)
+        }
+        throw new Error('No menu selected')
       }
     }
   })

@@ -5,7 +5,7 @@
         <template #header>
           <div class="text-center">
             <h2 class="text-3xl font-extrabold text-gray-900">
-              Create a new account
+              Sign Up
             </h2>
             <p class="mt-2 text-sm text-gray-600">
               Or
