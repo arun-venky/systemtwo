@@ -25,6 +25,7 @@ export type RoleState =
 // Create role management machine
 export const createRoleMachine = (initialContext: Partial<RoleContext> = {}) => {
   const roleStore = useRoleStore();
+  
   return createMachine<RoleContext, RoleEvent, RoleState>({
     id: 'roleManagement',
     initial: 'idle',

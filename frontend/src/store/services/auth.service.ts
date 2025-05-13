@@ -40,7 +40,7 @@ export const authService = {
       }
     } catch (error) {
       console.error('Failed to verify token:', error);
-      this.logout();
+      //this.logout();
       return false;
     }
   },

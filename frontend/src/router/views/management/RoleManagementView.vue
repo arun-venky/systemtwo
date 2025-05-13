@@ -263,11 +263,11 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { ShieldCheckIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
-import Button from '../../components/ui/button.vue';
-import Modal from '../../components/ui/modal.vue';
-import Spinner from '../../components/ui/spinner.vue';
-import Badge from '../../components/ui/badge.vue';
-import { useRoleManagement } from '../../composables/useRoleManagement';
+import Button from '../../../components/ui/button.vue';
+import Modal from '../../../components/ui/modal.vue';
+import Spinner from '../../../components/ui/spinner.vue';
+import Badge from '../../../components/ui/badge.vue';
+import { useRoleManagement } from '../../../composables/useRoleManagement';
 
 const {
   state,

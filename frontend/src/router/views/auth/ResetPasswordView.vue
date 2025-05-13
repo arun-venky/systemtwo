@@ -132,10 +132,10 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
-import Button from '../../components/ui/button.vue';
-import FormInput from '../../components/ui/formInput.vue';
-import Card from '../../components/ui/card.vue';
-import api from '../../utils/api';
+import Button from '../../../components/ui/button.vue';
+import FormInput from '../../../components/ui/formInput.vue';
+import Card from '../../../components/ui/card.vue';
+import api from '../../../utils/api';
 
 const route = useRoute();
 const router = useRouter();

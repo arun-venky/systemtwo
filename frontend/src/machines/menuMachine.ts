@@ -26,10 +26,10 @@ export type MenuState =
   | { value: 'deleting'; context: MenuContext }
   | { value: 'error'; context: MenuContext }
 
-const menuStore = useMenuStore();
-
 // Create menu management machine
 export const createMenuMachine = (initialContext: Partial<MenuContext> = {}) => {
+  const menuStore = useMenuStore();
+  
   return createMachine<MenuContext, MenuEvent, MenuState>({
     id: 'menuManagement',
     initial: 'idle',
@@ -39,7 +39,13 @@ export const createMenuMachine = (initialContext: Partial<MenuContext> = {}) => 
       selectedMenu: null,
       errorMessage: null,
       isLoading: false,
-      formData: { name: '', items: [] },
+      formData: { 
+        name: '', 
+        description: '',
+        isActive: false,
+        isPublic: false,
+        items: [] 
+      },
       menuItems: [],
       ...initialContext
     },
@@ -75,7 +81,13 @@ export const createMenuMachine = (initialContext: Partial<MenuContext> = {}) => 
       creating: {
         tags: ['creating'],
         entry: assign({ 
-          formData: { name: '', items: [] },
+          formData: { 
+            name: '', 
+            description: '',
+            isActive: false,
+            isPublic: false,
+            items: [] 
+          },
           selectedMenu: null 
         }),
         on: {
@@ -96,7 +108,10 @@ export const createMenuMachine = (initialContext: Partial<MenuContext> = {}) => 
         entry: assign({
           formData: (context) => ({ 
             name: context.selectedMenu?.name || '',
-            items: context.selectedMenu?.items || []
+            items: context.selectedMenu?.items || [],
+            description: context.selectedMenu?.description || '',
+            isActive: context.selectedMenu?.isActive || false,
+            isPublic: context.selectedMenu?.isPublic || false
           })
         }),
         on: {

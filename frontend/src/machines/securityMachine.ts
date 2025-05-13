@@ -29,10 +29,12 @@ type SecurityState =
 // Create security management machine
 export const createSecurityMachine = (initialContext: Partial<SecurityContext> = {}) => {
   const securityStore = useSecurityStore();
+
   return createMachine<SecurityContext, SecurityEvent, SecurityState>({
     id: 'securityManagement',
     initial: 'idle',
     context: {
+      recentLogs: [],
       settings: null,
       auditLogs: [],
       errorMessage: null,

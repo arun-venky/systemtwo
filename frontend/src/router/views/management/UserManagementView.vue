@@ -59,7 +59,7 @@
           <div v-if="selectedUsers.length" class="flex space-x-2">
             <Button
               variant="danger"
-              @click="bulkDelete"
+              @click="raiseEvent('BULK_DELETE')"
             >
               Delete Selected
             </Button>
@@ -106,13 +106,13 @@
                 <div class="flex space-x-2">
                   <Button
                     variant="ghost"
-                    @click="openRolesModal(user)"
+                    @click="raiseEvent('OPEN_ROLES_MODAL', user)"
                   >
                     Roles
                   </Button>
                   <Button
                     variant="ghost"
-                    @click="openPermissionsModal(user)"
+                    @click="raiseEvent('OPEN_PERMISSIONS_MODAL', user)"
                   >
                     Permissions
                   </Button>
@@ -125,21 +125,21 @@
                   </Button>
                   <Button
                     variant="warning"
-                    @click="resetPassword(user)"
+                    @click="raiseEvent('RESET_PASSWORD', user)"
                   >
                     Reset Password
                   </Button>
                   <Button
                     v-if="!user.twoFactorEnabled"
                     variant="info"
-                    @click="enable2FA(user)"
+                    @click="raiseEvent('ENABLE_2FA', user)"
                   >
                     Enable 2FA
                   </Button>
                   <Button
                     v-else
                     variant="danger"
-                    @click="disable2FA(user)"
+                    @click="raiseEvent('DISABLE_2FA', user)"
                   >
                     Disable 2FA
                   </Button>
@@ -348,14 +348,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { UserIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
-import Button from '../../components/ui/button.vue';
-import Modal from '../../components/ui/modal.vue';
-import Spinner from '../../components/ui/spinner.vue';
-import Badge from '../../components/ui/badge.vue';
-import { useUserManagement } from '../../composables/useUserManagement';
-import { useUserRoles } from '../../composables/useUserRoles';
-import { useUserPermissions } from '../../composables/useUserPermissions';
-import { useUserSecurity } from '../../composables/useUserSecurity';
+import Button from '../../../components/ui/button.vue';
+import Modal from '../../../components/ui/modal.vue';
+import Spinner from '../../../components/ui/spinner.vue';
+import Badge from '../../../components/ui/badge.vue';
+import { useUserManagement } from '../../../composables/useUserManagement';
+import { useUserRoles } from '../../../composables/useUserRoles';
+import { useUserPermissions } from '../../../composables/useUserPermissions';
+import { useUserSecurity } from '../../../composables/useUserSecurity';
 
 // Use composables
 const {

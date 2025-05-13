@@ -83,11 +83,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useMachine } from '@xstate/vue'
-import { createAuthMachine } from '../../machines/authMachine'
+import { createAuthMachine } from '../../../machines/authMachine'
 import { useToast } from 'vue-toastification'
-import Button from '../../components/ui/button.vue'
-import FormInput from '../../components/ui/formInput.vue'
-import Card from '../../components/ui/card.vue'
+import Button from '../../../components/ui/button.vue'
+import FormInput from '../../../components/ui/formInput.vue'
+import Card from '../../../components/ui/card.vue'
 
 const toast = useToast()
 

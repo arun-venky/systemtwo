@@ -79,7 +79,7 @@ import {
   HomeIcon,
   QuestionMarkCircleIcon
 } from '@heroicons/vue/24/outline';
-import Button from '../../components/ui/button.vue';
+import Button from '../../../components/ui/button.vue';
 
 const route = useRoute();
 const router = useRouter();

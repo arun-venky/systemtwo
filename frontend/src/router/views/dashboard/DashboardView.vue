@@ -177,10 +177,10 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
 import { useMachine } from '@xstate/vue'
-import { createDashboardMachine } from '../../machines/dashboardMachine'
-import DashboardLayout from '../../components/layout/DashboardLayout.vue'
-import Button from '../../components/ui/button.vue'
-import Card from '../../components/ui/card.vue'
+import { createDashboardMachine } from '../../../machines/dashboardMachine'
+import DashboardLayout from '../../layouts/DashboardLayout.vue'
+import Button from '../../../components/ui/button.vue'
+import Card from '../../../components/ui/card.vue'
 
 // Get user data from localStorage
 const userDataString = localStorage.getItem('user')

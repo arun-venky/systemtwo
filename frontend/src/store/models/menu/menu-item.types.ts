@@ -4,4 +4,6 @@ export interface MenuItem {
   url: string;
   roles: string[];
   order: number;
+  isActive?: boolean;
+  icon?: string;
 } 

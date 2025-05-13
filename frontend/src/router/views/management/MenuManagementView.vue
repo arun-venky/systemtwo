@@ -194,7 +194,7 @@
             <h3 class="text-lg font-medium">Menu Items</h3>
             <Button
               variant="primary"
-              @click="editingItem = {}"
+              @click="editingItem = { label: '', url: '', roles: [], order: 0 }"
             >
               Add Item
             </Button>
@@ -227,7 +227,7 @@
                   <input
                     type="text"
                     v-model="editingItem.icon"
-                    class="form-input"
+                    class="form-input"                  
                   />
                 </div>
                 <div class="flex items-center space-x-2">
@@ -281,7 +281,7 @@
                 </Button>
                 <Button
                   variant="danger"
-                  @click="deleteMenuItem(item._id)"
+                  @click="deleteMenuItem(item._id || '')"
                 >
                   Delete
                 </Button>
@@ -324,12 +324,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { ListBulletIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
-import Button from '../../components/ui/button.vue';
-import Modal from '../../components/ui/modal.vue';
-import Spinner from '../../components/ui/spinner.vue';
-import Badge from '../../components/ui/badge.vue';
-import { useMenuManagement } from '../../composables/useMenuManagement';
-import { useMenuItems } from '../../composables/useMenuItems';
+import Button from '../../../components/ui/button.vue';
+import Modal from '../../../components/ui/modal.vue';
+import Spinner from '../../../components/ui/spinner.vue';
+import Badge from '../../../components/ui/badge.vue';
+import { useMenuManagement } from '../../../composables/useMenuManagement';
+import { useMenuItems } from '../../../composables/useMenuItems';
 
 // Use composables
 const {

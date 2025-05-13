@@ -229,10 +229,10 @@
         title="Page Draft"
         @close="showDraftModal = false"
       >
-        <div class="space-y-4">
+        <div class="space-y-4" v-if="currentDraft">
           <div class="flex justify-between items-center">
             <p class="text-sm text-gray-500">
-              Last saved: {{ new Date(currentDraft?.lastSaved || '').toLocaleString() }}
+              Last saved: {{ new Date(currentDraft.lastSaved || '').toLocaleString() }}
             </p>
             <div class="flex space-x-2">
               <Button
@@ -243,14 +243,14 @@
               </Button>
               <Button
                 variant="primary"
-                @click="saveDraft(currentDraft?.content || '')"
+                @click="saveDraft(currentDraft.content || '')"
               >
                 Save Draft
               </Button>
             </div>
           </div>
           <textarea
-            v-model="currentDraft?.content"
+            v-model="currentDraft.content"
             class="form-textarea"
             rows="10"
           ></textarea>
@@ -290,11 +290,11 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { DocumentIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
-import Button from '../../components/ui/button.vue';
-import Modal from '../../components/ui/modal.vue';
-import Spinner from '../../components/ui/spinner.vue';
-import Badge from '../../components/ui/badge.vue';
-import { usePageManagement } from '../../composables/usePageManagement';
+import Button from '../../../components/ui/button.vue';
+import Modal from '../../../components/ui/modal.vue';
+import Spinner from '../../../components/ui/spinner.vue';
+import Badge from '../../../components/ui/badge.vue';
+import { usePageManagement } from '../../../composables/usePageManagement';
 
 const {
   state,

@@ -1,6 +1,8 @@
 import { MenuItem } from './menu-item.types';
 
 export interface Menu {
+  isActive: any;
+  isPublic: any;
   description: any;
   _id: string;
   name: string;

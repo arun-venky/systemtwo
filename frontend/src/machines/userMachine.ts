@@ -23,6 +23,7 @@ export type UserState =
 // Create user management machine
 export const createUserMachine = (initialContext: Partial<UserContext> = {}) => {
   const userStore = useUserStore();
+  
   return createMachine<UserContext, UserEvent, UserState>({
     id: 'userManagement',
     initial: 'idle',

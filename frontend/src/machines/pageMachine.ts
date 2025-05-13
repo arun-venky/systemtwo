@@ -23,6 +23,7 @@ export type PageState =
 // Create page management machine
 export const createPageMachine = (initialContext: Partial<PageContext> = {}) => {
   const pageStore = usePageStore();
+  
   return createMachine<PageContext, PageEvent, PageState>({
     id: 'pageManagement',
     initial: 'idle',

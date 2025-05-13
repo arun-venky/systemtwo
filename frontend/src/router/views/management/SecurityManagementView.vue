@@ -138,7 +138,7 @@
 
       <!-- Security Settings Modal -->
       <Modal
-        v-if="showSettingsModal"
+        v-if="showSettingsModal && selectedSettings"
         title="Security Settings"
         @close="showSettingsModal = false"
       >
@@ -378,12 +378,12 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { UserIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
-import Button from '../../components/ui/button.vue';
-import Modal from '../../components/ui/modal.vue';
-import Spinner from '../../components/ui/spinner.vue';
-import Badge from '../../components/ui/badge.vue';
-import Card from '../../components/ui/card.vue';
-import { useSecurityManagement } from '../../composables/useSecurityManagement';
+import Button from '../../../components/ui/button.vue';
+import Modal from '../../../components/ui/modal.vue';
+import Spinner from '../../../components/ui/spinner.vue';
+import Badge from '../../../components/ui/badge.vue';
+import Card from '../../../components/ui/card.vue';
+import { useSecurityManagement } from '../../../composables/useSecurityManagement';
 
 const {
   state,

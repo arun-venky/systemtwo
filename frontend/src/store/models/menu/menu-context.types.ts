@@ -10,6 +10,9 @@ export interface MenuContext {
   isLoading: boolean;
   menuItems: MenuItem[];
   formData: {
+    description: string | number | readonly string[] | null | undefined;
+    isActive: any;
+    isPublic: any;
     name: string;
     items: MenuItem[];
   };

@@ -6,28 +6,28 @@ import type { RouteRecordRaw } from 'vue-router'
 import DashboardLayout from '../router/layouts/DashboardLayout.vue';
 
 // Auth views
-import LoginView from '../views/auth/LoginView.vue'
-import SignupView from '../views/auth/SignupView.vue'
-import ForgotPasswordView from '../views/auth/ForgotPasswordView.vue'
-import ResetPasswordView from '../views/auth/ResetPasswordView.vue'
+import LoginView from '../router/views/auth/LoginView.vue'
+import SignupView from '../router/views/auth/SignupView.vue'
+import ForgotPasswordView from '../router/views/auth/ForgotPasswordView.vue'
+import ResetPasswordView from '../router/views/auth/ResetPasswordView.vue'
 
 // Dashboard views
-import DashboardView from '../views/dashboard/DashboardView.vue'
+import DashboardView from '../router/views/dashboard/DashboardView.vue'
 
 // Management views
-import RoleManagementView from '../views/management/RoleManagementView.vue'
-import PageManagementView from '../views/management/PageManagementView.vue'
-import SecurityManagementView from '../views/management/SecurityManagementView.vue'
-import MenuManagementView from '../views/management/MenuManagementView.vue'
-import UserManagementView from '../views/management/UserManagementView.vue'
+import RoleManagementView from '../router/views/management/RoleManagementView.vue'
+import PageManagementView from '../router/views/management/PageManagementView.vue'
+import SecurityManagementView from '../router/views/management/SecurityManagementView.vue'
+import MenuManagementView from '../router/views/management/MenuManagementView.vue'
+import UserManagementView from '../router/views/management/UserManagementView.vue'
 
 // Error views
-import ForbiddenView from '../views/errors/ForbiddenView.vue'
-import NotFoundView from '../views/errors/NotFoundView.vue'
-import UnauthorizedView from '../views/errors/UnauthorizedView.vue'
+import ForbiddenView from '../router/views/errors/ForbiddenView.vue'
+import NotFoundView from '../router/views/errors/NotFoundView.vue'
+import UnauthorizedView from '../router/views/errors/UnauthorizedView.vue'
 
 // Import layouts
-import AdminLayout from './layouts/AdminLayout.vue'
+import AdminLayout from '../router/layouts/AdminLayout.vue'
 
 const routes: RouteRecordRaw[] = [
   {
