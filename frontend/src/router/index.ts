@@ -199,46 +199,46 @@ const router = createRouter({
 
 // Navigation guard
 router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore()
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
-  const requiresPermission = to.meta.requiresPermission as string | undefined
+  // const authStore = useAuthStore()
+  // const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  // const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
+  // const requiresPermission = to.meta.requiresPermission as string | undefined
 
   // Set page title
-  document.title = `${to.meta.title} | Your App Name`
+  document.title = `${to.meta.title} | SystemTwo`
 
-  // Check authentication status
-  const isAuthenticated = await authStore.checkAuth()
+  // // Check authentication status
+  // const isAuthenticated = await authStore.checkAuth()
 
-  // Check if route requires authentication
-  if (requiresAuth && !isAuthenticated) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
-    return
-  }
+  // // Check if route requires authentication
+  // if (requiresAuth && !isAuthenticated) {
+  //   next({ name: 'login', query: { redirect: to.fullPath } })
+  //   return
+  // }
 
-  // Check if route requires admin role
-  if (requiresAdmin && !authStore.isAdmin) {
-    next({ 
-      name: 'unauthorized',
-      query: { 
-        requiredRole: 'admin',
-        path: to.fullPath 
-      }
-    })
-    return
-  }
+  // // Check if route requires admin role
+  // if (requiresAdmin && !authStore.isAdmin) {
+  //   next({ 
+  //     name: 'unauthorized',
+  //     query: { 
+  //       requiredRole: 'admin',
+  //       path: to.fullPath 
+  //     }
+  //   })
+  //   return
+  // }
 
   // Check if route requires specific permission
-  if (requiresPermission && !authStore.hasPermission(requiresPermission)) {
-    next({ 
-      name: 'unauthorized',
-      query: { 
-        requiredPermission: requiresPermission,
-        path: to.fullPath 
-      }
-    })
-    return
-  }
+  // if (requiresPermission && !authStore.hasPermission(requiresPermission)) {
+  //   next({ 
+  //     name: 'unauthorized',
+  //     query: { 
+  //       requiredPermission: requiresPermission,
+  //       path: to.fullPath 
+  //     }
+  //   })
+  //   return
+  // }
 
   next()
 })

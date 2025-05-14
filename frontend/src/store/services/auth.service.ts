@@ -21,10 +21,10 @@ export const authService = {
     return response.data;
   },
 
-  async verifyAuth() {
+  async verifyAuth(token: string) {
     // Verify token with backend
     try {
-      const response = await api.get('/auth/verify');
+      const response = await api.post('/auth/verify', { token });
       if (response.data.valid) {
         // Update user data if needed
         if (response.data.user) {
@@ -35,7 +35,7 @@ export const authService = {
         }
         return true;
       } else {
-        this.logout();
+        //this.logout();
         return false;
       }
     } catch (error) {

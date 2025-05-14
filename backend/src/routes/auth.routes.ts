@@ -6,11 +6,12 @@ import {
   refreshToken, 
   logout,
   requestPasswordReset,
-  resetPassword,
+  resetPassword,  
   verifyEmail,
   resendVerificationEmail,
   changePassword,
-  updateProfile
+  updateProfile,
+  verify
 } from '../controllers/auth.controller.js';
 import { verifyToken, verifyRefreshToken } from '../middleware/auth.middleware.js';
 import { validateRequest } from '../middleware/validation.middleware.js';
@@ -42,6 +43,13 @@ authRoutes.post(
   ],
   validateRequest,
   signup
+);
+
+// verify token route
+authRoutes.post(
+  '/verify',
+  [],
+  verify
 );
 
 // Login route with validation

@@ -4,7 +4,7 @@ import { Role } from '../models/role.model.js';
 import { AuditLog } from '../models/audit-log.model.js';
 import { generateToken, generateRefreshToken, parseUser } from '../utils/tokenUtils.js';
 import { logger, logAudit } from '../utils/logger.js';
-import { AuthRequest } from '../middleware/auth.middleware.js';
+import { AuthRequest, validateTokenInternal } from '../middleware/auth.middleware.js';
 
 // Signup controller
 export const signup = async (req: Request, res: Response) => {
@@ -534,36 +534,48 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
+// Verify token controller
+export const verify = async (req: Request, res: Response) => {
+  debugger
+  const { token } = req.body;
+  const user = await validateTokenInternal(token);
+  if (user === null) {
+    return res.status(401).json({ message: 'Unauthorized - Token expired or invalid' });
+  }
+  return user;
+};
+
 // Verify email controller
-export const verifyEmail = async (req: Request, res: Response) => {
+export const verifyEmail = async (req: AuthRequest, res: Response) => {
   try {
-    const { token } = req.params;
-    
-    // Find user with verification token
-    const user = await User.findOne({
-      verificationToken: token,
-      verificationTokenExpiry: { $gt: Date.now() }
-    });
+    const { email } = req.body;
+    const user = await User.findOne({ email });
     
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired verification token' });
+      return res.status(404).json({ message: 'User not found' });
     }
     
-    // Update user
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    user.verificationTokenExpiry = undefined;
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+    
+    // Generate new verification token
+    const verificationToken = await user.generateVerificationToken();
     await user.save();
+    
+    // TODO: Send verification email
+    // For now, we'll just log it
+    logger.info(`Verification token for ${email}: ${verificationToken}`);
     
     // Log the action
     await AuditLog.create({
       userId: user._id,
-      action: 'verify_email',
+      action: 'validate_email',
       resource: 'auth',
-      details: `Email verified for ${user.email}`,
+      details: `Email verified for ${email}`,
     });
     
-    logAudit(user.id.toString(), 'verify_email', 'auth', `Email verified for ${user.email}`);
+    logAudit(user.id.toString(), 'validate_email', 'auth', `Email verified for ${email}`);
     
     res.status(200).json({ message: 'Email verified successfully' });
   } catch (error) {
@@ -700,3 +712,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Error updating profile' });
   }
 };
+
+function verifyTokenInternal(req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>) {
+  throw new Error('Function not implemented.');
+}

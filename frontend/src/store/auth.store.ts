@@ -101,7 +101,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         // If no token exists, user is not authenticated
         if (!this.token) {
-          this.logout();
+          //this.logout();
           return false;
         }
 
@@ -113,15 +113,16 @@ export const useAuthStore = defineStore('auth', {
           // Try to refresh the token
           const success = await this.getRefreshToken();
           if (!success) {
-            this.logout();
+            //this.logout();
             return false;
           }
         }
 
-        return await authService.verifyAuth();
+        // Verify the token
+        return await authService.verifyAuth(this.token);
       } catch (error) {
         console.error('Auth check failed:', error);
-        this.logout();
+        //this.logout();
         return false;
       }
     }

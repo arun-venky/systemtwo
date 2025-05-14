@@ -8,8 +8,33 @@ export interface AuthRequest extends Request {
   user?: IUser;
 }
 
+export const validateTokenInternal = async (token:string) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
+    
+    const user = await User.findById(decoded.id).populate('role');
+    
+    if (!user) {
+      return null;
+    }
+
+    // Check if token matches stored token and is not expired
+    if (!user.accessToken || 
+        user.accessToken !== token || 
+        !user.accessTokenExpiry || 
+        user.accessTokenExpiry < new Date()) {
+      return null;
+    }
+    
+    return user;
+  } catch (error) {
+    logger.error('JWT verification failed', error);
+    return null;
+  }
+}
+
 // Verify JWT token middleware
-export const verifyToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const verifyToken = async (req: AuthRequest, res: Response, next?: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     
@@ -19,28 +44,15 @@ export const verifyToken = async (req: AuthRequest, res: Response, next: NextFun
     
     const token = authHeader.split(' ')[1];
     
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
-      
-      const user = await User.findById(decoded.id).populate('role');
-      
-      if (!user) {
-        return res.status(401).json({ message: 'Unauthorized - Invalid token' });
-      }
-
-      // Check if token matches stored token and is not expired
-      if (!user.accessToken || 
-          user.accessToken !== token || 
-          !user.accessTokenExpiry || 
-          user.accessTokenExpiry < new Date()) {
-        return res.status(401).json({ message: 'Unauthorized - Token expired or invalid' });
-      }
-      
-      req.user = user;
-      next();
-    } catch (error) {
-      logger.error('JWT verification failed', error);
+    const user = await validateTokenInternal(token);
+    if (!user) {
       return res.status(401).json({ message: 'Unauthorized - Token expired or invalid' });
+    }
+
+    req.user = user;
+
+    if (next) {
+      next();
     }
   } catch (error) {
     logger.error('Error in auth middleware', error);
