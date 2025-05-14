@@ -15,15 +15,54 @@ import {
 } from '../controllers/auth.controller.js';
 import { verifyToken, verifyRefreshToken } from '../middleware/auth.middleware.js';
 import { validateRequest } from '../middleware/validation.middleware.js';
-import { logger, logAudit } from '../utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 export const authRoutes = express.Router();
 
 // Logging middleware for auth routes
 authRoutes.use((req, res, next) => {
-  logger.info(`Auth request: ${req.method} /api/auth${req.url}`, { body: req.body });
+  logger.info('Auth route accessed', {
+    method: req.method,
+    path: req.path,
+    body: req.body,
+    headers: {
+      'content-type': req.headers['content-type'],
+      'user-agent': req.headers['user-agent']
+    },
+    ip: req.ip
+  });
   next();
 });
+
+// Public routes
+// Login route with validation
+authRoutes.post(
+  '/login',
+  [
+    body('email')
+      .isEmail()
+      .withMessage('Must be a valid email address')
+      .normalizeEmail(),
+    body('password')
+      .notEmpty()
+      .withMessage('Password is required')
+  ],
+  (req: { body: any; }, res: any, next: () => void) => {
+    logger.info('Login validation middleware', {
+      body: req.body,
+      //validationErrors: req.validationErrors
+    });
+    next();
+  },
+  //validateRequest,
+  (req: { body: any; }, res: any, next: () => void) => {
+    logger.info('Login controller about to be called', {
+      body: req.body
+    });
+    next();
+  },
+  login
+);
 
 // Signup route with validation
 authRoutes.post(
@@ -45,38 +84,19 @@ authRoutes.post(
   signup
 );
 
-// verify token route
-authRoutes.post(
-  '/verify',
-  [],
-  verify
-);
+// Logout route
+authRoutes.post('/logout', logout);
 
-// Login route with validation
-authRoutes.post(
-  '/login',
-  [
-    body('email')
-      .isEmail()
-      .withMessage('Must be a valid email address')
-      .normalizeEmail(),
-    body('password')
-      .notEmpty()
-      .withMessage('Password is required')
-  ],
-  //validateRequest,
-  login
-);
+// Protected routes
+// verify token route
+authRoutes.post('/verify', verify);
 
 // Refresh token route
 authRoutes.post('/refresh', verifyRefreshToken, refreshToken);
 
-// Logout route
-authRoutes.post('/logout', logout);
-
-// Request password reset
+// Password reset routes
 authRoutes.post(
-  '/password/reset-request',
+  '/forgot-password',
   [
     body('email')
       .isEmail()
@@ -89,7 +109,7 @@ authRoutes.post(
 
 // Reset password with token
 authRoutes.post(
-  '/password/reset',
+  '/reset-password',
   [
     body('token').notEmpty().withMessage('Reset token is required'),
     body('password')
@@ -100,33 +120,9 @@ authRoutes.post(
   resetPassword
 );
 
-// Verify email with token
-authRoutes.get(
-  '/verify-email/:token',
-  [
-    body('token').notEmpty().withMessage('Verification token is required'),    
-  ],
-  validateRequest,
-  verifyEmail
-);
-
-// Resend verification email
-authRoutes.post(
-  '/verify-email/resend',
-  verifyToken,
-  [
-    body('email')
-      .isEmail()
-      .withMessage('Must be a valid email address')
-      .normalizeEmail()
-  ],
-  validateRequest,
-  resendVerificationEmail
-);
-
 // Change password (authenticated)
 authRoutes.post(
-  '/password/change',
+  '/change-password',
   verifyToken,
   [
     body('currentPassword').notEmpty().withMessage('Current password is required'),
@@ -157,3 +153,30 @@ authRoutes.put(
   validateRequest,
   updateProfile
 );
+
+// Email verification routes
+// Verify email with token
+authRoutes.get(
+  '/verify-email',
+  [
+    body('token').notEmpty().withMessage('Verification token is required'),    
+  ],
+  validateRequest,
+  verifyEmail
+);
+
+// Resend verification email
+authRoutes.post(
+  '/resend-verification-email',
+  [
+    body('email')
+      .isEmail()
+      .withMessage('Must be a valid email address')
+      .normalizeEmail()
+  ],
+  validateRequest,
+  resendVerificationEmail
+);
+
+export default authRoutes;
+

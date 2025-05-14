@@ -1,7 +1,9 @@
+import { Permission, Role } from "../role";
+
 export interface User {
   twoFactorEnabled: any;
-  roles: never[];
-  permissions: never[];
+  roles: Role[];
+  permissions: Permission[];
   _id: string;
   username: string;
   email: string;

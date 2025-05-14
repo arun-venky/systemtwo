@@ -93,11 +93,19 @@ export const signup = async (req: Request, res: Response) => {
 // Login controller
 export const login = async (req: Request, res: Response) => {
   const startTime = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
+  
   try {
-    const { email, password } = req.body;   
+    logger.info('Login controller started', {
+      requestId,
+      body: req.body,
+      timestamp: new Date().toISOString()
+    });
 
-    // Find user by email
-    const user = await User.findOne({ email }).populate('role');
+    const { email, password } = req.body;
+    
+    // // Find user by email
+    const user = await User.findOne({ email })
 
     if (!user) {
       logger.warn('Login failed - User not found', { 
@@ -124,17 +132,19 @@ export const login = async (req: Request, res: Response) => {
     const token = generateToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    // Store tokens in database
-    await user.setTokens(token, refreshToken);
+    // Store tokens in database and create audit log in parallel
+    //await user.setTokens(token, refreshToken);
+    await Promise.all([
+      user.setTokens(token, refreshToken),
+      AuditLog.create({
+        userId: user._id,
+        action: 'login',
+        resource: 'auth',
+        details: `User ${user.username} logged in`,
+      })
+    ]);
 
-    // Log the login action
-    await AuditLog.create({
-      userId: user._id,
-      action: 'login',
-      resource: 'auth',
-      details: `User ${user.username} logged in`,
-    });
-
+    const endTime = Date.now();
     logAudit(user.id.toString(), 'login', 'auth', `User ${user.username} logged in`);
 
     // Send response
@@ -145,10 +155,12 @@ export const login = async (req: Request, res: Response) => {
       user: parseUser(user),
     });
   } catch (error) {
+    const endTime = Date.now();
     logger.error('Login error', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      requestBody: req.body
+      requestBody: req.body,
+      duration: endTime - startTime
     });
     res.status(500).json({ message: 'Error during login' });
   }
@@ -536,12 +548,17 @@ export const resetPassword = async (req: Request, res: Response) => {
 
 // Verify token controller
 export const verify = async (req: Request, res: Response) => {
-  debugger
   const { token } = req.body;
   const user = await validateTokenInternal(token);
   if (user === null) {
     return res.status(401).json({ message: 'Unauthorized - Token expired or invalid' });
-  }
+  }  
+  res.status(200).json({
+    message: 'Token verified successfully',
+    valid: true,
+    token,
+    user: parseUser(user),
+  });
   return user;
 };
 

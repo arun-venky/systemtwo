@@ -176,6 +176,8 @@ export const createAuthMachine = (initialContext: Partial<AuthContext> = {}) => 
         errorMessage: (_, event) => {
           if ('data' in event && event.data) {
             const error = event.data as AxiosError<ErrorResponse>
+            console.error('Auth Error:', event.data)
+            console.error('Auth Error:', error.response?.data)
             console.error('Auth Error:', error)
 
             // Handle network errors
@@ -265,7 +267,7 @@ export const createAuthMachine = (initialContext: Partial<AuthContext> = {}) => 
         }
         
         try {
-          return await authStore.getRefreshToken()
+          return await authStore.getRefreshToken(token)
         } catch (error) {
           console.error('Auth Error: Token refresh failed', error)
           return Promise.reject('Token refresh failed')

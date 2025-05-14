@@ -8,7 +8,7 @@ export interface IUser extends Document {
   username: string;
   email: string;
   password: string;
-  role: mongoose.Types.ObjectId | IRole;
+  role: IRole;
   isVerified: boolean;
   verificationToken?: string;
   verificationTokenExpiry?: Date;
@@ -110,6 +110,12 @@ UserSchema.pre('save', async function (next) {
     next(error);
   }
 });
+
+// Add indexes for frequently queried fields
+UserSchema.index({ email: 1 }, { unique: true });
+UserSchema.index({ username: 1 }, { unique: true });
+UserSchema.index({ accessToken: 1 });
+UserSchema.index({ refreshToken: 1 });
 
 // Method to compare passwords
 UserSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {

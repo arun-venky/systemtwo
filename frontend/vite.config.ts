@@ -7,7 +7,8 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      'vue': 'vue/dist/vue.esm-bundler.js'
     }
   },
   server: {
@@ -22,6 +23,13 @@ export default defineConfig({
     }
   },
   build: {
-    target: 'es2020'
+    target: 'es2020',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vue': ['vue', 'vue-router', 'pinia']
+        }
+      }
+    }    
   }
 })

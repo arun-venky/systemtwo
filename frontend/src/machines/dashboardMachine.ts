@@ -127,6 +127,7 @@ export const createDashboardMachine = (initialContext: Partial<DashboardContext>
     },
     services: {
       fetchDashboardData: async () => {
+        console.log('Fetching dashboard data');
         // Get user data from localStorage
         const userDataString = localStorage.getItem('user')
         const userData = userDataString ? JSON.parse(userDataString) : null

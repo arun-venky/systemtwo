@@ -7,10 +7,11 @@ const toast = useToast()
 // Create axios instance
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  withCredentials: true // Important for CORS
 })
 
 // Request interceptor for API calls
@@ -49,9 +50,11 @@ api.interceptors.response.use(
         }
         
         // Try to refresh the token
-        const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/refresh`, {
-          refreshToken,
-        })
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_URL}/auth/refresh`,
+          { refreshToken },
+          { withCredentials: true }
+        )
         
         const { token, refreshToken: newRefreshToken } = response.data
         
@@ -71,6 +74,21 @@ api.interceptors.response.use(
       }
     }
     
+    // if (
+    //   (error.code === 'ECONNABORTED' || error.response?.status >= 500) &&
+    //   !originalRequest._retry &&
+    //   originalRequest.retryCount < 3
+    // ) {
+    //   originalRequest._retry = true;
+    //   originalRequest.retryCount = (originalRequest.retryCount || 0) + 1;
+      
+    //   // Exponential backoff
+    //   const delay = Math.pow(2, originalRequest.retryCount) * 1000;
+    //   await new Promise(resolve => setTimeout(resolve, delay));
+      
+    //   return api(originalRequest);
+    // }
+
     // Handle other errors
     handleApiError(error)
     return Promise.reject(error)

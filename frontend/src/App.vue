@@ -17,17 +17,20 @@ const authStore = useAuthStore();
 const router = useRouter();
 
 // Check auth status
-const checkAuthStatus = async () => {
-  const isAuthenticated = await authStore.checkAuth();
+const verifyAuth = async () => {
+  const isAuthenticated = await authStore.verifyAuth();
   if (!isAuthenticated) {
     // Handle unauthenticated state
-    router.push('/login');
+    router.push('/auth/login');
+  } else{
+    console.log('User is authenticated');
   }
 };
 
 // Call on component mount
 onMounted(() => {
-  checkAuthStatus();
+  console.log('Verify auth status');
+  verifyAuth();
 });
 </script>
 

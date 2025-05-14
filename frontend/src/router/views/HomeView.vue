@@ -3,7 +3,7 @@
     <!-- Header -->
     <header class="bg-white shadow">
       <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <h1 class="text-3xl font-bold text-gray-900">Welcome to RBAC Admin</h1>
+        <h1 class="text-3xl font-bold text-gray-900">Welcome to SYSTEMTWO Admin</h1>
       </div>
     </header>
     
@@ -23,7 +23,7 @@
               </div>
             </div>
             <div v-else class="text-center">
-              <h2 class="text-2xl font-semibold text-gray-900 mb-4">Welcome to RBAC Admin</h2>
+              <h2 class="text-2xl font-semibold text-gray-900 mb-4">Welcome to SYSTEMTWO Admin</h2>
               <p class="text-gray-600 mb-6">Please log in to access the dashboard</p>
               <div class="space-y-4">
                 <router-link to="/login" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -40,7 +40,7 @@
     <footer class="bg-white">
       <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <p class="text-center text-gray-500 text-sm">
-          &copy; {{ new Date().getFullYear() }} RBAC Admin. All rights reserved.
+          &copy; {{ new Date().getFullYear() }} SYSTEMTWO Admin. All rights reserved.
         </p>
       </div>
     </footer>

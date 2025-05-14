@@ -1,5 +1,5 @@
 <template>
-  <DashboardLayout>
+  <DashboardLayout>    
     <div class="section">
       <h1 class="section-title">Dashboard</h1>
     </div>
@@ -234,6 +234,7 @@ const truncateText = (text: string, maxLength: number) => {
 
 // Fetch dashboard data on mount
 onMounted(() => {
+  console.log('Fetching dashboard data');
   send('FETCH')
 })
 </script>

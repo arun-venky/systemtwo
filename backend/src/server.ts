@@ -5,7 +5,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import { logger } from './utils/logger.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { authRoutes } from './routes/auth.routes.js';
 import { userRoutes } from './routes/user.routes.js';
 import { pageRoutes } from './routes/page.routes.js';
@@ -24,16 +24,28 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(helmet());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://127.0.0.1:8080'],
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : ['http://localhost:8080', 'http://127.0.0.1:8080'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json());
 
 // Logging middleware
 app.use((req, res, next) => {
+  res.setTimeout(25000, () => {
+    logger.error('Request timeout', {
+      path: req.path,
+      method: req.method,
+      body: req.body
+    });
+    res.status(408).json({ message: 'Request timeout' });
+  }); 
   logger.info(`${req.method} ${req.url}`);
   next();
 });
@@ -46,30 +58,45 @@ app.use('/api/menus', menuRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/security', securityRoutes);
 
+// Health check endpoint - Move this BEFORE the 404 handler
+app.get('/api/health', (req, res) => {
+  logger.info('Health check endpoint accessed');
+  res.status(200).json({ 
+    status: 'ok', 
+    message: 'API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'API is running' });
-});
+// 404 handler - must be after all routes
+app.use(notFoundHandler);
+
 
 // Error handling middleware
 app.use(errorHandler);
 
-const uri = process.env.MONGO_URI as string;
-const options: ConnectOptions = {
-  dbName: 'rbac',
-  retryWrites: true,
-  w: 'majority'
-};
-
 // Connect to MongoDB and start server
 const startServer = async () => {
-  try {
+  try {    
     logger.info('Attempting to connect to MongoDB...');
-    logger.info(`Connection URI: ${uri.replace(/\/\/[^:]+:[^@]+@/, '//****:****@')}`); // Hide credentials in logs
+    const uri = process.env.MONGO_URI as string;
+    const options: ConnectOptions = {
+      dbName: 'rbac',
+      retryWrites: true,
+      w: 'majority',
+      serverSelectionTimeoutMS: 5000, // 5 seconds
+      socketTimeoutMS: 25000, // 25 seconds
+      connectTimeoutMS: 10000, // 10 seconds
+      maxPoolSize: 10, // Limit connection pool
+      minPoolSize: 5, // Maintain minimum connections
+      maxIdleTimeMS: 60000, // Close idle connections after 1 minute
+      heartbeatFrequencyMS: 10000, // Check connection health every 10 
+    };
     
+    logger.info(`Connection URI: ${uri.replace(/\/\/[^:]+:[^@]+@/, '//****:****@')}`); // Hide credentials in logs
     await mongoose.connect(uri, options);
     logger.info('Connected to MongoDB');
 
@@ -102,7 +129,7 @@ process.on('unhandledRejection', (error) => {
 
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception', error);
-  process.exit(1);
+  //process.exit(1);
 });
 
 export default app;

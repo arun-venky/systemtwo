@@ -1,3 +1,4 @@
+import { Role, Permission } from '../role';
 import { User } from '../user/user.types';
 
 export interface AuthState {
@@ -5,6 +6,6 @@ export interface AuthState {
     user: User | null;
     token: string | null;
     refreshToken: string | null;
-    permissions: string[];
-    roles: string[];
+    permissions: Permission[];
+    roles: Role[];
 } 

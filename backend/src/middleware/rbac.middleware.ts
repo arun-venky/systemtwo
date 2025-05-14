@@ -33,7 +33,7 @@ export const checkPermission = (resource: string, action: 'create' | 'read' | 'u
       
       next();
     } catch (error) {
-      logger.error('Error in RBAC middleware', error);
+      logger.error('Error in SYSTEMTWO middleware', error);
       return res.status(500).json({ message: 'Internal server error' });
     }
   };

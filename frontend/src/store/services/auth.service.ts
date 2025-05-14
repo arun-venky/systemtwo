@@ -1,14 +1,13 @@
 import api from '../../utils/api';
 
 export const authService = {
-  async login(email: string, password: string) {    
-    const response = await api.post('/auth/login', { email, password });
+  async login(email: string, password: string) {  
+    const response = await api.post('/auth/login', { email, password });    
     return response.data;
   },
 
   async logout() {
-    const response = await api.post('/auth/logout');
-    return response.data;
+    await api.post('/auth/logout');
   },
 
   async signup(username: string, email: string, password: string) {    
@@ -22,57 +21,32 @@ export const authService = {
   },
 
   async verifyAuth(token: string) {
-    // Verify token with backend
     try {
       const response = await api.post('/auth/verify', { token });
-      if (response.data.valid) {
-        // Update user data if needed
-        if (response.data.user) {
-          // this.user = response.data.user;
-          // this.permissions = response.data.user.permissions || [];
-          // this.roles = response.data.user.roles || [];
-          localStorage.setItem('user', JSON.stringify(response.data.user));
-        }
-        return true;
-      } else {
-        //this.logout();
-        return false;
-      }
+      return response.data.valid;
     } catch (error) {
       console.error('Failed to verify token:', error);
-      //this.logout();
       return false;
     }
   },
 
-  async getRefreshToken() {
+  async getRefreshToken(token: string) {
     try {
-      await api.post('/auth/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          refreshToken: ''//this.refreshToken
-        })
-      });
+      const response = await api.post('/auth/refresh', {
+                                                          method: 'POST',
+                                                          headers: {
+                                                            'Content-Type': 'application/json'
+                                                          },
+                                                          body: JSON.stringify({
+                                                            refreshToken: token
+                                                          })
+                                                        });
 
-      // if (!response.ok) {
-      //   throw new Error('Failed to refresh token');
-      // }
-
-      // const data = await response.json();
-      // this.token = data.token;
-      // this.refreshToken = data.refreshToken;
-
-      // localStorage.setItem('token', data.token);
-      // localStorage.setItem('refreshToken', data.refreshToken);
-
-      return true;
+      console.log('getRefreshToken response:', response.data);
+      return response.data;
     } catch (error) {
       console.error('Failed to refresh token:', error);
-      this.logout();
-      return false;
+      return null;
     }
   },
 }; 

@@ -33,69 +33,104 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: DashboardLayout,
-    meta: { requiresAuth: true },
+    meta: { 
+      requiresAuth: true,
+      title: 'Dashboard'
+    },
     children: [
       {
         path: '',
-        name: 'dashboard',
-        component: DashboardView,
-        meta: { title: 'Dashboard' }
+        redirect: '/dashboard'
       },
       {
-        path: 'management',
-        meta: { requiresAdmin: true },
-        children: [
-          {
-            path: 'roles',
-            name: 'role-management',
-            component: RoleManagementView,
-            meta: { 
-              title: 'Role Management',
-              permissions: ['roles', 'read']
-            }
-          },
-          {
-            path: 'pages',
-            name: 'page-management',
-            component: PageManagementView,
-            meta: { 
-              title: 'Page Management',
-              permissions: ['pages', 'read']
-            }
-          },
-          {
-            path: 'security',
-            name: 'security-management',
-            component: SecurityManagementView,
-            meta: { 
-              title: 'Security Management',
-              permissions: ['security', 'read']
-            }
-          }
-        ]
+        path: 'dashboard',
+        name: 'dashboard',
+        component: DashboardView,
+        meta: { 
+          title: 'Dashboard',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'pages',
+        name: 'page-management',
+        component: PageManagementView,
+        meta: { 
+          title: 'Page Management',
+          requiresAuth: true,
+          permissions: ['pages', 'read']
+        }
+      },
+      {
+        path: 'menus',
+        name: 'menu-management',
+        component: MenuManagementView,
+        meta: { 
+          title: 'Menu Management',
+          requiresAuth: true,
+          permissions: ['menus', 'read']
+        }
+      },
+      {
+        path: 'users',
+        name: 'user-management',
+        component: UserManagementView,
+        meta: { 
+          title: 'User Management',
+          requiresAuth: true,
+          permissions: ['users', 'read']
+        }
+      },
+      {
+        path: 'roles',
+        name: 'role-management',
+        component: RoleManagementView,
+        meta: { 
+          title: 'Role Management',
+          requiresAuth: true,
+          permissions: ['roles', 'read']
+        }
+      },
+      {
+        path: 'security',
+        name: 'security-management',
+        component: SecurityManagementView,
+        meta: { 
+          title: 'Security Management',
+          requiresAuth: true,
+          permissions: ['security', 'read']
+        }
       }
     ]
   },
   {
     path: '/auth',
+    meta: { requiresAuth: false },
     children: [
       {
         path: 'login',
         name: 'login',
         component: LoginView,
-        meta: { title: 'Login' }
+        meta: { 
+          title: 'Login',
+          requiresAuth: false
+        }
       },
       {
         path: 'signup',
         name: 'signup',
         component: SignupView,
-        meta: { title: 'Sign Up' }
+        meta: { 
+          title: 'Sign Up',
+          requiresAuth: false
+        }
       },
       {
         path: 'forgot-password',
         name: 'forgot-password',
         component: ForgotPasswordView,
         meta: {
+          title: 'Forgot Password',
           requiresAuth: false
         }
       },
@@ -104,6 +139,7 @@ const routes: RouteRecordRaw[] = [
         name: 'reset-password',
         component: ResetPasswordView,
         meta: {
+          title: 'Reset Password',
           requiresAuth: false
         }
       }
@@ -114,6 +150,7 @@ const routes: RouteRecordRaw[] = [
     name: 'unauthorized',
     component: UnauthorizedView,
     meta: {
+      title: 'Unauthorized',
       requiresAuth: false
     }
   },
@@ -121,67 +158,10 @@ const routes: RouteRecordRaw[] = [
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: NotFoundView,
-    meta: { title: 'Not Found' }
-  },
-  {
-    path: '/admin',
-    component: AdminLayout,
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true
-    },
-    children: [
-      {
-        path: 'menus',
-        name: 'menu-management',
-        component: MenuManagementView,
-        meta: {
-          title: 'Menu Management',
-          icon: 'MenuIcon',
-          requiresPermission: 'menu:manage'
-        }
-      },
-      {
-        path: 'users',
-        name: 'user-management',
-        component: UserManagementView,
-        meta: {
-          title: 'User Management',
-          icon: 'UserIcon',
-          requiresPermission: 'user:manage'
-        }
-      },
-      {
-        path: 'roles',
-        name: 'role-management',
-        component: RoleManagementView,
-        meta: {
-          title: 'Role Management',
-          icon: 'ShieldCheckIcon',
-          requiresPermission: 'role:manage'
-        }
-      },
-      {
-        path: 'security',
-        name: 'security-management',
-        component: SecurityManagementView,
-        meta: {
-          title: 'Security Management',
-          icon: 'LockClosedIcon',
-          requiresPermission: 'security:manage'
-        }
-      },
-      {
-        path: 'pages',
-        name: 'page-management',
-        component: PageManagementView,
-        meta: {
-          title: 'Page Management',
-          icon: 'DocumentIcon',
-          requiresPermission: 'page:manage'
-        }
-      }
-    ]
+    meta: { 
+      title: 'Not Found',
+      requiresAuth: false
+    }
   }
 ]
 
@@ -199,46 +179,71 @@ const router = createRouter({
 
 // Navigation guard
 router.beforeEach(async (to, from, next) => {
-  // const authStore = useAuthStore()
-  // const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-  // const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
-  // const requiresPermission = to.meta.requiresPermission as string | undefined
+  const authStore = useAuthStore()
+  
+  // Get meta properties from matched routes
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
+  const requiresPermission = to.matched.some(record => record.meta.permissions) 
+    ? to.matched.find(record => record.meta.permissions)?.meta.permissions as string[]
+    : undefined
+
+  console.log('Navigation guard:', {
+    to: to.path,
+    matched: to.matched,
+    requiresAuth,
+    requiresAdmin,
+    requiresPermission,
+    meta: to.meta
+  })
 
   // Set page title
-  document.title = `${to.meta.title} | SystemTwo`
+  document.title = `SystemTwo ${'| ' + to.meta.title || ''}`
 
-  // // Check authentication status
-  // const isAuthenticated = await authStore.checkAuth()
+  // Check authentication status  
+  const isAuthenticated = await authStore.verifyAuth()
+  console.log('isAuthenticated:', isAuthenticated)
 
-  // // Check if route requires authentication
-  // if (requiresAuth && !isAuthenticated) {
-  //   next({ name: 'login', query: { redirect: to.fullPath } })
-  //   return
-  // }
+  // Check if route requires authentication
+  if (requiresAuth && !isAuthenticated) {
+    console.log('Auth required, redirecting to login')
+    next({ name: 'login', query: { redirect: to.fullPath } })
+    return
+  }
 
-  // // Check if route requires admin role
-  // if (requiresAdmin && !authStore.isAdmin) {
-  //   next({ 
-  //     name: 'unauthorized',
-  //     query: { 
-  //       requiredRole: 'admin',
-  //       path: to.fullPath 
-  //     }
-  //   })
-  //   return
-  // }
+  // Check if route requires admin role
+  if (requiresAdmin && !authStore.isAdmin) {
+    console.log('Admin role required, redirecting to unauthorized')
+    next({ 
+      name: 'unauthorized',
+      query: { 
+        requiredRole: 'admin',
+        path: to.fullPath 
+      }
+    })
+    return
+  }
 
-  // Check if route requires specific permission
-  // if (requiresPermission && !authStore.hasPermission(requiresPermission)) {
-  //   next({ 
-  //     name: 'unauthorized',
-  //     query: { 
-  //       requiredPermission: requiresPermission,
-  //       path: to.fullPath 
-  //     }
-  //   })
-  //   return
-  // }
+  // Check if route requires specific permissions
+  if (requiresPermission) {
+    const hasPermission = requiresPermission.every(permission => 
+      authStore.hasPermission(permission)
+    )
+    console.log('Permission check:', {
+      required: requiresPermission,
+      hasPermission
+    })
+    if (!hasPermission) {
+      next({ 
+        name: 'unauthorized',
+        query: { 
+          requiredPermissions: requiresPermission.join(','),
+          path: to.fullPath 
+        }
+      })
+      return
+    }
+  }
 
   next()
 })

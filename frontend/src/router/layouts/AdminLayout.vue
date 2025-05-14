@@ -143,36 +143,6 @@ import {
 
 // Example icons for notifications (replace as needed)
 import { ShieldCheckIcon, UserIcon, DocumentIcon, LockClosedIcon, ListBulletIcon } from '@heroicons/vue/24/outline'
-
-// Admin routes (should match your router config)
-const adminRoutes = [
-  {
-    path: '/admin/menus',
-    name: 'menu-management',
-    meta: { title: 'Menu Management', icon: ListBulletIcon }
-  },
-  {
-    path: '/admin/users',
-    name: 'user-management',
-    meta: { title: 'User Management', icon: UserIcon }
-  },
-  {
-    path: '/admin/roles',
-    name: 'role-management',
-    meta: { title: 'Role Management', icon: ShieldCheckIcon }
-  },
-  {
-    path: '/admin/security',
-    name: 'security-management',
-    meta: { title: 'Security Management', icon: LockClosedIcon }
-  },
-  {
-    path: '/admin/pages',
-    name: 'page-management',
-    meta: { title: 'Page Management', icon: DocumentIcon }
-  }
-]
-
 const isSidebarOpen = ref(true)
 const showNotificationsPanel = ref(false)
 const notifications = ref([
@@ -198,9 +168,9 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const userName = computed(() => authStore.user?.name || 'Admin')
+const userName = computed(() => authStore.user?.username || 'Admin')
 const userRole = computed(() => authStore.user?.role || 'Administrator')
-const userAvatar = computed(() => authStore.user?.avatar || '/default-avatar.png')
+const userAvatar = computed(() => '/default-avatar.png')
 
 const currentRouteTitle = computed(() => {
   const match = adminRoutes.find(r => r.name === route.name)
@@ -228,6 +198,35 @@ function logout() {
 function formatDate(date: Date) {
   return date.toLocaleString()
 }
+
+// Admin routes (should match your router config)
+const adminRoutes = [
+  {
+    path: '/menus',
+    name: 'menu-management',
+    meta: { title: 'Menu Management', icon: ListBulletIcon }
+  },
+  {
+    path: '/users',
+    name: 'user-management',
+    meta: { title: 'User Management', icon: UserIcon }
+  },
+  {
+    path: '/roles',
+    name: 'role-management',
+    meta: { title: 'Role Management', icon: ShieldCheckIcon }
+  },
+  {
+    path: '/security',
+    name: 'security-management',
+    meta: { title: 'Security Management', icon: LockClosedIcon }
+  },
+  {
+    path: '/pages',
+    name: 'page-management',
+    meta: { title: 'Page Management', icon: DocumentIcon }
+  }
+]
 </script>
 
 <style scoped>
