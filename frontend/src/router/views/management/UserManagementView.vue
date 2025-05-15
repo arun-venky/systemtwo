@@ -1,15 +1,15 @@
 <template>
-  <div class="page-container">
-    <div class="section">
+  <div class="management-view">
+    <div class="management-container">
       <!-- Header -->
-      <div class="flex-between mb-6">
-        <h1 class="section-title">User Management</h1>
-        <div class="flex space-x-2">
+      <div class="management-header">
+        <h1 class="management-title">User Management</h1>
+        <div class="management-actions">
           <input
             type="text"
             v-model="searchQuery"
             placeholder="Search users..."
-            class="form-input"
+            class="form-input management-search"
           />
           <Button
             variant="primary"
@@ -45,9 +45,9 @@
       </div>
 
       <!-- User List -->
-      <div v-else class="card">
+      <div v-else class="management-content">
         <div class="card-header">
-          <div class="flex-between">
+          <div class="management-list-header">
             <div class="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -57,7 +57,7 @@
               />
               <span class="text-sm text-gray-500">Select All</span>
             </div>
-            <div v-if="selectedUsers.length" class="flex space-x-2">
+            <div v-if="selectedUsers.length" class="management-list-actions">
               <Button
                 variant="danger"
                 @click="raiseEvent('BULK_DELETE')"
@@ -73,91 +73,54 @@
             </div>
           </div>
         </div>
-        <ul class="divide-y divide-gray-200">
-          <li v-for="user in filteredUsers" :key="user._id">
-            <div class="px-4 py-4 sm:px-6">
-              <div class="flex-between">
-                <div class="flex items-center">
-                  <input
-                    type="checkbox"
-                    :value="user._id"
-                    v-model="selectedUsers"
-                    class="form-checkbox mr-4"
-                  />
-                  <div class="flex-shrink-0">
-                    <UserIcon class="h-6 w-6 text-gray-400" />
-                  </div>
-                  <div class="ml-4">
-                    <h2 class="text-lg font-medium text-gray-900">{{ user.username }}</h2>
-                    <p class="text-sm text-gray-500">{{ user.email }}</p>
-                    <div class="mt-1 flex space-x-2">
-                      <Badge
-                        :variant="user.isVerified ? 'success' : 'warning'"
-                      >
-                        {{ user.isVerified ? 'Verified' : 'Unverified' }}
-                      </Badge>
-                      <Badge
-                        v-if="user.twoFactorEnabled"
-                        variant="info"
-                      >
-                        2FA Enabled
-                      </Badge>
-                    </div>
+        <ul class="management-list">
+          <li v-for="user in filteredUsers" :key="user._id" class="management-list-item">
+            <div class="management-list-header">
+              <div class="management-list-info">
+                <input
+                  type="checkbox"
+                  :value="user._id"
+                  v-model="selectedUsers"
+                  class="form-checkbox mr-4"
+                />
+                <UserIcon class="management-list-icon" />
+                <div class="management-list-details">
+                  <h2 class="management-list-title">{{ user.username }}</h2>
+                  <p class="management-list-subtitle">{{ user.email }}</p>
+                  <div class="management-list-badges">
+                    <Badge
+                      :variant="user.isVerified ? 'success' : 'warning'"
+                    >
+                      {{ user.isVerified ? 'Verified' : 'Unverified' }}
+                    </Badge>
+                    <Badge
+                      v-if="user.twoFactorEnabled"
+                      variant="info"
+                    >
+                      2FA Enabled
+                    </Badge>
                   </div>
                 </div>
-                <div class="flex space-x-2">
-                  <Button
-                    variant="ghost"
-                    @click="raiseEvent('OPEN_ROLES_MODAL', user)"
-                  >
-                    Roles
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    @click="raiseEvent('OPEN_PERMISSIONS_MODAL', user)"
-                  >
-                    Permissions
-                  </Button>
-                  <Button
-                    v-if="!user.isVerified"
-                    variant="success"
-                    @click="verifyEmail(user)"
-                  >
-                    Verify Email
-                  </Button>
-                  <Button
-                    variant="warning"
-                    @click="raiseEvent('RESET_PASSWORD', user)"
-                  >
-                    Reset Password
-                  </Button>
-                  <Button
-                    v-if="!user.twoFactorEnabled"
-                    variant="info"
-                    @click="raiseEvent('ENABLE_2FA', user)"
-                  >
-                    Enable 2FA
-                  </Button>
-                  <Button
-                    v-else
-                    variant="danger"
-                    @click="raiseEvent('DISABLE_2FA', user)"
-                  >
-                    Disable 2FA
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    @click="editUser(user)"
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    @click="deleteUser(user)"
-                  >
-                    Delete
-                  </Button>
-                </div>
+              </div>
+              <div class="management-list-actions">
+                <Button
+                  variant="ghost"
+                  @click="openRolesModal(user)"
+                >
+                  Roles
+                </Button>
+                <Button
+                  variant="ghost"
+                  @click="editUser(user)"
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="danger"
+                  @click="deleteUser(user)"
+                >
+                  Delete
+                </Button>
               </div>
             </div>
           </li>
@@ -202,14 +165,14 @@
             <div>
               <label class="form-label">Roles</label>
               <div class="space-y-2">
-                <div v-for="role in availableRoles" :key="role._id" class="flex items-center space-x-2">
+                <div v-for="role in state.context.roles" :key="role._id" class="flex items-center space-x-2">
                   <input
                     type="checkbox"
                     :value="role._id"
                     v-model="state.context.formData.roles"
                     class="form-checkbox"
                   />
-                  <span>{{ role.name }}</span>
+                  <span class="text-sm text-gray-700">{{ role.name }}</span>
                 </div>
               </div>
             </div>
@@ -232,65 +195,21 @@
         </form>
       </Modal>
 
-      <!-- Roles Modal -->
-      <Modal
-        v-if="showRolesModal"
-        title="User Roles"
-        @close="showRolesModal = false"
-      >
-        <div class="space-y-4">
-          <div v-for="role in selectedUserRoles" :key="role._id" class="flex items-center justify-between">
-            <div class="flex items-center">
-              <ShieldCheckIcon class="h-5 w-5 text-gray-400 mr-2" />
-              <span>{{ role.name }}</span>
-            </div>
-            <Button
-              variant="ghost"
-              @click="removeRoleFromUser(role)"
-            >
-              Remove
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <!-- Permissions Modal -->
-      <Modal
-        v-if="showPermissionsModal"
-        title="User Permissions"
-        @close="showPermissionsModal = false"
-      >
-        <div class="space-y-4">
-          <div v-for="(permission, index) in selectedUserPermissions" :key="index" class="flex items-center space-x-2">
-            <span class="font-medium">{{ permission.resource }}</span>
-            <div class="flex space-x-1">
-              <Badge
-                v-for="action in permission.actions"
-                :key="action"
-                variant="info"
-              >
-                {{ action }}
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </Modal>
-
       <!-- Bulk Roles Modal -->
       <Modal
         v-if="showBulkRolesModal"
-        title="Assign Roles to Selected Users"
+        title="Assign Roles"
         @close="showBulkRolesModal = false"
       >
         <div class="space-y-4">
-          <div v-for="role in availableRoles" :key="role._id" class="flex items-center space-x-2">
+          <div v-for="role in state.context.roles" :key="role._id" class="flex items-center space-x-2">
             <input
               type="checkbox"
               :value="role._id"
               v-model="selectedRoles"
               class="form-checkbox"
             />
-            <span>{{ role.name }}</span>
+            <span class="text-sm text-gray-700">{{ role.name }}</span>
           </div>
           <div class="flex justify-end space-x-2 mt-6">
             <Button
@@ -303,8 +222,7 @@
             <Button
               type="button"
               variant="primary"
-              @click="assignRolesToUsers"
-              :disabled="!selectedRoles.length"
+              @click="assignBulkRoles"
             >
               Assign Roles
             </Button>

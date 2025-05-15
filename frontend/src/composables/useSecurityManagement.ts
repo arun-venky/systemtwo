@@ -37,7 +37,9 @@ export function useSecurityManagement() {
   const openSettingsModal = async () => {
     try {
       send('FETCH');
-      selectedSettings.value = currentSettings.value;
+      // Wait for the state to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      selectedSettings.value = state.value.context.settings;
       showSettingsModal.value = true;
     } catch (error) {
       console.error('Failed to fetch security settings:', error);
@@ -48,6 +50,8 @@ export function useSecurityManagement() {
   const updateSecuritySettings = async (settings: Partial<SecuritySettings>) => {
     try {
       send({ type: 'UPDATE_SETTINGS', settings });
+      // Wait for the state to update
+      await new Promise(resolve => setTimeout(resolve, 100));
       showSettingsModal.value = false;
     } catch (error) {
       console.error('Failed to update security settings:', error);
@@ -59,21 +63,45 @@ export function useSecurityManagement() {
   const openAuditLogModal = async () => {
     try {
       send({ type: 'GET_AUDIT_LOGS', filters: auditLogFilters.value });
-      auditLogs.value = currentAuditLogs.value;
+      // Wait for the state to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      if (state.value.context.errorMessage) {
+        throw new Error(state.value.context.errorMessage);
+      }
+      auditLogs.value = state.value.context.auditLogs || [];
       showAuditLogModal.value = true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch audit logs:', error);
-      send({ type: 'ERROR', error });
+      if (error.code === 'ECONNABORTED') {
+        send({ type: 'ERROR', error: new Error('Request timed out. Please try again.') });
+      } else if (error.response?.status >= 500) {
+        send({ type: 'ERROR', error: new Error('Server error. Please try again later.') });
+      } else {
+        send({ type: 'ERROR', error });
+      }
     }
   };
 
   const applyAuditLogFilters = async () => {
     try {
+      // Reset to first page when applying new filters
+      auditLogFilters.value.page = 1;
       send({ type: 'GET_AUDIT_LOGS', filters: auditLogFilters.value });
-      auditLogs.value = currentAuditLogs.value;
-    } catch (error) {
+      // Wait for the state to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      if (state.value.context.errorMessage) {
+        throw new Error(state.value.context.errorMessage);
+      }
+      auditLogs.value = state.value.context.auditLogs;
+    } catch (error: any) {
       console.error('Failed to apply audit log filters:', error);
-      send({ type: 'ERROR', error });
+      if (error.code === 'ECONNABORTED') {
+        send({ type: 'ERROR', error: new Error('Request timed out. Please try again.') });
+      } else if (error.response?.status >= 500) {
+        send({ type: 'ERROR', error: new Error('Server error. Please try again later.') });
+      } else {
+        send({ type: 'ERROR', error });
+      }
     }
   };
 
@@ -92,12 +120,27 @@ export function useSecurityManagement() {
 
   const loadMoreLogs = async () => {
     try {
-      auditLogFilters.value.page = (auditLogFilters.value.page || 1) + 1;
+      const nextPage = state.value.context.pagination.page + 1;
+      if (nextPage > state.value.context.pagination.totalPages) {
+        return;
+      }
+      auditLogFilters.value.page = nextPage;
       send({ type: 'GET_AUDIT_LOGS', filters: auditLogFilters.value });
-      auditLogs.value = [...auditLogs.value, ...currentAuditLogs.value];
-    } catch (error) {
+      // Wait for the state to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      if (state.value.context.errorMessage) {
+        throw new Error(state.value.context.errorMessage);
+      }
+      auditLogs.value = [...auditLogs.value, ...state.value.context.auditLogs];
+    } catch (error: any) {
       console.error('Failed to load more logs:', error);
-      send({ type: 'ERROR', error });
+      if (error.code === 'ECONNABORTED') {
+        send({ type: 'ERROR', error: new Error('Request timed out. Please try again.') });
+      } else if (error.response?.status >= 500) {
+        send({ type: 'ERROR', error: new Error('Server error. Please try again later.') });
+      } else {
+        send({ type: 'ERROR', error });
+      }
     }
   };
 

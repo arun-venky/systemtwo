@@ -1,9 +1,13 @@
 export interface MenuItem {
-  _id?: string;
-  label: string;
+  _id: string;
+  title: string;
+  slug: string;
   url: string;
-  roles: string[];
-  order: number;
-  isActive?: boolean;
   icon?: string;
+  order: number;
+  parentId?: string;
+  children?: MenuItem[];
+  isActive?: boolean;
+  isVisible?: boolean;
+  permissions?: string[];
 } 

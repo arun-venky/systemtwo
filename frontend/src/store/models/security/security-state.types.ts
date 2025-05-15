@@ -6,4 +6,10 @@ export interface SecurityState {
   auditLogs: AuditLog[];
   errorMessage: string | null;
   isLoading: boolean;
+  pagination: {
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalCount: number;
+  };
 } 

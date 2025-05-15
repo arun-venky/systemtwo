@@ -34,14 +34,65 @@ interface SecuritySettings {
 // Get audit logs controller
 export const getAuditLogs = async (req: Request, res: Response) => {
   try {
-    const logs = await AuditLog.find({})
+    const {
+      page = 1,
+      limit = 10,
+      startDate,
+      endDate,
+      userId,
+      action,
+      resource,
+      ipAddress
+    } = req.query;
+
+    // Build query
+    const query: any = {};
+    
+    if (startDate || endDate) {
+      query.timestamp = {};
+      if (startDate) {
+        query.timestamp.$gte = new Date(startDate as string);
+      }
+      if (endDate) {
+        query.timestamp.$lte = new Date(endDate as string);
+      }
+    }
+
+    if (userId) {
+      query.userId = userId;
+    }
+
+    if (action) {
+      query.action = action;
+    }
+
+    if (resource) {
+      query.resource = resource;
+    }
+
+    if (ipAddress) {
+      query.ipAddress = ipAddress;
+    }
+
+    // Calculate skip value for pagination
+    const skip = (Number(page) - 1) * Number(limit);
+
+    // Get total count
+    const totalCount = await AuditLog.countDocuments(query);
+
+    // Get logs with pagination and sorting
+    const logs = await AuditLog.find(query)
       .populate('userId', 'username')
       .sort({ timestamp: -1 })
-      .limit(100);
+      .skip(skip)
+      .limit(Number(limit));
     
     res.status(200).json({
-      count: logs.length,
+      count: totalCount,
       logs,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(totalCount / Number(limit))
     });
   } catch (error) {
     logger.error('Error getting audit logs', error);

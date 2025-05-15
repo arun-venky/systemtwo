@@ -7,6 +7,7 @@ export interface IAuditLog extends Document {
   resource: string;
   details: string;
   timestamp: Date;
+  ipAddress?: string;
 }
 
 // Create Audit Log schema
@@ -41,6 +42,10 @@ const AuditLogSchema: Schema = new Schema({
     type: Date,
     default: Date.now,
   },
+  ipAddress: {
+    type: String,
+    required: false,
+  }
 });
 
 // Create and export AuditLog model

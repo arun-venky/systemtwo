@@ -33,7 +33,8 @@ securityRoutes.get(
     query('endDate').optional().isISO8601(),
     query('userId').optional().isMongoId(),
     query('action').optional(),
-    query('resource').optional()
+    query('resource').optional(),
+    query('ipAddress').optional().isIP()
   ],
   validateRequest,
   getAuditLogs

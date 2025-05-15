@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="management-view">
+    <div class="management-container">
       <!-- Header -->
-      <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Security Management</h1>
-        <div class="flex space-x-2">
+      <div class="management-header">
+        <h1 class="management-title">Security Management</h1>
+        <div class="management-actions">
           <Button
             variant="primary"
             @click="openSettingsModal"
@@ -21,7 +21,7 @@
       </div>
 
       <!-- Loading State -->
-      <div v-if="isCurrentState('loading')" class="flex justify-center items-center py-12">
+      <div v-if="isCurrentState('loading')" class="flex-center py-12">
         <Spinner size="lg" />
       </div>
 
@@ -46,11 +46,11 @@
       <!-- Security Overview -->
       <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <!-- Security Settings Card -->
-        <Card>
-          <template #header>
+        <div class="management-content">
+          <div class="card-header">
             <h3 class="text-lg font-medium text-gray-900">Security Settings</h3>
-          </template>
-          <template #content>
+          </div>
+          <div class="card-body">
             <div class="space-y-4">
               <div class="flex items-center justify-between">
                 <span class="text-sm text-gray-500">Password Policy</span>
@@ -69,23 +69,23 @@
                 <span class="text-sm text-gray-900">{{ state.context.settings?.sessionTimeout }} minutes</span>
               </div>
             </div>
-          </template>
-          <template #footer>
+          </div>
+          <div class="card-footer">
             <Button
               variant="ghost"
               @click="openSettingsModal"
             >
               Edit Settings
             </Button>
-          </template>
-        </Card>
+          </div>
+        </div>
 
         <!-- Recent Activity Card -->
-        <Card>
-          <template #header>
+        <div class="management-content">
+          <div class="card-header">
             <h3 class="text-lg font-medium text-gray-900">Recent Activity</h3>
-          </template>
-          <template #content>
+          </div>
+          <div class="card-body">
             <div class="space-y-4">
               <div v-for="log in state.context.recentLogs" :key="log._id" class="flex items-start space-x-3">
                 <div class="flex-shrink-0">
@@ -94,33 +94,33 @@
                 <div>
                   <p class="text-sm text-gray-900">{{ log.action }}</p>
                   <p class="text-xs text-gray-500">
-                    {{ new Date(log.timestamp).toLocaleString() }}
+                    {{ formatDate(log.timestamp) }}
                   </p>
                 </div>
               </div>
             </div>
-          </template>
-          <template #footer>
+          </div>
+          <div class="card-footer">
             <Button
               variant="ghost"
               @click="openAuditLogModal"
             >
               View All Logs
             </Button>
-          </template>
-        </Card>
+          </div>
+        </div>
 
         <!-- Security Status Card -->
-        <Card>
-          <template #header>
+        <div class="management-content">
+          <div class="card-header">
             <h3 class="text-lg font-medium text-gray-900">Security Status</h3>
-          </template>
-          <template #content>
+          </div>
+          <div class="card-body">
             <div class="space-y-4">
               <div class="flex items-center justify-between">
                 <span class="text-sm text-gray-500">Last Security Scan</span>
                 <span class="text-sm text-gray-900">
-                  {{ new Date(state.context.settings?.lastSecurityScan || '').toLocaleString() }}
+                  {{ formatDate(state.context.settings?.lastSecurityScan) }}
                 </span>
               </div>
               <div class="flex items-center justify-between">
@@ -132,13 +132,13 @@
                 <span class="text-sm text-gray-900">{{ state.context.settings?.activeSessions }}</span>
               </div>
             </div>
-          </template>
-        </Card>
+          </div>
+        </div>
       </div>
 
       <!-- Security Settings Modal -->
       <Modal
-        v-if="showSettingsModal && selectedSettings"
+        v-if="showSettingsModal"
         title="Security Settings"
         @close="showSettingsModal = false"
       >
@@ -260,114 +260,154 @@
         </form>
       </Modal>
 
-      <!-- Audit Log Modal -->
+      <!-- Audit Logs Modal -->
       <Modal
         v-if="showAuditLogModal"
         title="Audit Logs"
-        @close="showAuditLogModal = false"
+        @close="handleCloseAuditLogModal"
+        width="w-[90vw] max-w-[1000px]"
       >
         <div class="space-y-4">
           <!-- Filters -->
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label class="form-label">Start Date</label>
-              <input
-                type="date"
-                v-model="auditLogFilters.startDate"
-                class="form-input"
-              />
+          <div class="management-content">
+            <div class="card-body">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="form-label">Start Date</label>
+                  <input 
+                    type="date" 
+                    v-model="auditLogFilters.startDate"
+                    class="form-input"
+                  />
+                </div>
+                <div>
+                  <label class="form-label">End Date</label>
+                  <input 
+                    type="date" 
+                    v-model="auditLogFilters.endDate"
+                    class="form-input"
+                  />
+                </div>
+                <div>
+                  <label class="form-label">Action</label>
+                  <select 
+                    v-model="auditLogFilters.action"
+                    class="form-input"
+                  >
+                    <option value="">All Actions</option>
+                    <option value="login">Login</option>
+                    <option value="logout">Logout</option>
+                    <option value="create">Create</option>
+                    <option value="update">Update</option>
+                    <option value="delete">Delete</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label">User ID</label>
+                  <input 
+                    type="text" 
+                    v-model="auditLogFilters.userId"
+                    class="form-input"
+                    placeholder="Filter by user ID"
+                  />
+                </div>
+                <div>
+                  <label class="form-label">IP Address</label>
+                  <input 
+                    type="text" 
+                    v-model="auditLogFilters.ipAddress"
+                    class="form-input"
+                    placeholder="Filter by IP address"
+                  />
+                </div>
+                <div class="flex items-end space-x-2">
+                  <Button
+                    variant="primary"
+                    class="flex-1 whitespace-nowrap"
+                    @click="applyAuditLogFilters"
+                  >
+                    Apply Filters
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    class="whitespace-nowrap"
+                    @click="clearAuditLogFilters"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="form-label">End Date</label>
-              <input
-                type="date"
-                v-model="auditLogFilters.endDate"
-                class="form-input"
-              />
-            </div>
-            <div>
-              <label class="form-label">Action</label>
-              <select
-                v-model="auditLogFilters.action"
-                class="form-select"
-              >
-                <option value="">All Actions</option>
-                <option value="login">Login</option>
-                <option value="logout">Logout</option>
-                <option value="create">Create</option>
-                <option value="update">Update</option>
-                <option value="delete">Delete</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label">IP Address</label>
-              <input
-                type="text"
-                v-model="auditLogFilters.ipAddress"
-                class="form-input"
-                placeholder="Enter IP address"
-              />
-            </div>
-          </div>
-          <div class="flex justify-end space-x-2">
-            <Button
-              variant="ghost"
-              @click="clearAuditLogFilters"
-            >
-              Clear Filters
-            </Button>
-            <Button
-              variant="primary"
-              @click="applyAuditLogFilters"
-            >
-              Apply Filters
-            </Button>
           </div>
 
-          <!-- Log Table -->
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Timestamp
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Action
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    IP Address
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Details
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="log in auditLogs" :key="log._id">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ new Date(log.timestamp).toLocaleString() }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {{ log.userId }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <Badge :variant="getActionVariant(log.action)">
-                      {{ log.action }}
-                    </Badge>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ log.ipAddress }}
-                  </td>
-                  <td class="px-6 py-4 text-sm text-gray-500">
-                    {{ log.details }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- Audit Logs Table -->
+          <div class="management-content">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resource</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <tr v-if="securityStore.isLoading" class="hover:bg-gray-50">
+                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                      <div class="flex justify-center items-center">
+                        <Spinner size="sm" class="mr-2" />
+                        Loading logs...
+                      </div>
+                    </td>
+                  </tr>
+                  <tr v-else-if="auditLogs.length === 0" class="hover:bg-gray-50">
+                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                      No logs found
+                    </td>
+                  </tr>
+                  <tr v-for="log in auditLogs" :key="log._id" class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {{ formatDate(log.timestamp) }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {{ log.userId }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <Badge :variant="getActionVariant(log.action)">
+                        {{ log.action }}
+                      </Badge>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {{ log.resource }}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                      {{ log.details }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer flex justify-between items-center">
+              <Button
+                variant="ghost"
+                class="whitespace-nowrap"
+                @click="loadMoreLogs"
+                :disabled="securityStore.isLoading"
+              >
+                <Spinner v-if="securityStore.isLoading" size="sm" class="mr-2" />
+                Load More
+              </Button>
+              <Button
+                variant="secondary"
+                class="whitespace-nowrap"
+                @click="exportAuditLogs"
+                :disabled="securityStore.isLoading"
+              >
+                Export CSV
+              </Button>
+            </div>
           </div>
         </div>
       </Modal>
@@ -376,15 +416,18 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { UserIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
 import Button from '../../../components/ui/button.vue';
 import Modal from '../../../components/ui/modal.vue';
 import Spinner from '../../../components/ui/spinner.vue';
 import Badge from '../../../components/ui/badge.vue';
-import Card from '../../../components/ui/card.vue';
 import { useSecurityManagement } from '../../../composables/useSecurityManagement';
+import { useSecurityStore } from '@/store/security.store';
+import { AuditLogFilters } from '@/store/models';
+import { format } from 'date-fns';
 
+const securityStore = useSecurityStore();
 const {
   state,
   showSettingsModal,
@@ -398,8 +441,20 @@ const {
   openAuditLogModal,
   updateSecuritySettings,
   applyAuditLogFilters,
-  clearAuditLogFilters
+  clearAuditLogFilters,
+  loadMoreLogs,
+  exportAuditLogs
 } = useSecurityManagement();
+
+const formatDate = (date: string | undefined | null) => {
+  if (!date) return 'N/A';
+  try {
+    return format(new Date(date), 'MMM d, yyyy HH:mm:ss');
+  } catch (error) {
+    console.error('Invalid date:', date);
+    return 'Invalid Date';
+  }
+};
 
 const getActionVariant = (action: string) => {
   const variants: Record<string, 'info' | 'success' | 'warning' | 'danger'> = {
@@ -412,8 +467,16 @@ const getActionVariant = (action: string) => {
   return variants[action] || 'info';
 };
 
-// Fetch security data on mount
-onMounted(() => {
-  raiseEvent('FETCH');
+const handleCloseAuditLogModal = () => {
+  showAuditLogModal.value = false;
+  clearAuditLogFilters();
+};
+
+onMounted(async () => {
+  try {
+    await securityStore.getSecuritySettings();
+  } catch (error) {
+    console.error('Failed to load security settings:', error);
+  }
 });
 </script> 

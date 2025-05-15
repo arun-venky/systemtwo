@@ -1,15 +1,15 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="management-view">
+    <div class="management-container">
       <!-- Header -->
-      <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Menu Management</h1>
-        <div class="flex space-x-2">
+      <div class="management-header">
+        <h1 class="management-title">Menu Management</h1>
+        <div class="management-actions">
           <input
             type="text"
             v-model="searchQuery"
             placeholder="Search menus..."
-            class="form-input"
+            class="form-input management-search"
           />
           <Button
             variant="primary"
@@ -22,7 +22,7 @@
       </div>
 
       <!-- Loading State -->
-      <div v-if="isCurrentState('loading')" class="flex justify-center items-center py-12">
+      <div v-if="isCurrentState('loading')" class="flex-center py-12">
         <Spinner size="lg" />
       </div>
 
@@ -45,78 +45,76 @@
       </div>
 
       <!-- Menu List -->
-      <div v-else class="bg-white shadow overflow-hidden sm:rounded-md">
-        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-          <div class="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              v-model="selectAll"
-              class="form-checkbox"
-              @change="toggleSelectAll"
-            />
-            <span class="text-sm text-gray-500">Select All</span>
-          </div>
-          <div v-if="selectedMenus.length" class="flex space-x-2">
-            <Button
-              variant="danger"
-              @click="bulkDelete"
-            >
-              Delete Selected
-            </Button>
+      <div v-else class="management-content">
+        <div class="card-header">
+          <div class="management-list-header">
+            <div class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                v-model="selectAll"
+                class="form-checkbox"
+                @change="toggleSelectAll"
+              />
+              <span class="text-sm text-gray-500">Select All</span>
+            </div>
+            <div v-if="selectedMenus.length" class="management-list-actions">
+              <Button
+                variant="danger"
+                @click="raiseEvent('BULK_DELETE')"
+              >
+                Delete Selected
+              </Button>
+            </div>
           </div>
         </div>
-        <ul class="divide-y divide-gray-200">
-          <li v-for="menu in filteredMenus" :key="menu._id">
-            <div class="px-4 py-4 sm:px-6">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                  <input
-                    type="checkbox"
-                    :value="menu._id"
-                    v-model="selectedMenus"
-                    class="form-checkbox mr-4"
-                  />
-                  <div class="flex-shrink-0">
-                    <MenuIcon class="h-6 w-6 text-gray-400" />
-                  </div>
-                  <div class="ml-4">
-                    <h2 class="text-lg font-medium text-gray-900">{{ menu.name }}</h2>
-                    <p class="text-sm text-gray-500">{{ menu.description }}</p>
-                    <div class="mt-1 flex space-x-2">
-                      <Badge
-                        :variant="menu.isActive ? 'success' : 'warning'"
-                      >
-                        {{ menu.isActive ? 'Active' : 'Inactive' }}
-                      </Badge>
-                      <Badge
-                        v-if="menu.isPublic"
-                        variant="info"
-                      >
-                        Public
-                      </Badge>
-                    </div>
+        <ul class="management-list">
+          <li v-for="menu in filteredMenus" :key="menu._id" class="management-list-item">
+            <div class="management-list-header">
+              <div class="management-list-info">
+                <input
+                  type="checkbox"
+                  :value="menu._id"
+                  v-model="selectedMenus"
+                  class="form-checkbox mr-4"
+                />
+                <Bars3Icon class="management-list-icon" />
+                <div class="management-list-details">
+                  <h2 class="management-list-title">{{ menu.name }}</h2>
+                  <p class="management-list-subtitle">{{ menu.location }}</p>
+                  <div class="management-list-badges">
+                    <Badge
+                      :variant="menu.isActive ? 'success' : 'warning'"
+                    >
+                      {{ menu.isActive ? 'Active' : 'Inactive' }}
+                    </Badge>
+                    <Badge
+                      v-if="menu.items.length"
+                      variant="info"
+                    >
+                      {{ menu.items.length }} Items
+                    </Badge>
                   </div>
                 </div>
-                <div class="flex space-x-2">
-                  <Button
-                    variant="ghost"
-                    @click="openItemsModal(menu)"
-                  >
-                    Manage Items
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    @click="editMenu(menu)"
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    @click="deleteMenu(menu)"
-                  >
-                    Delete
-                  </Button>
-                </div>
+              </div>
+              <div class="management-list-actions">
+                <Button
+                  variant="ghost"
+                  @click="manageItems(menu)"
+                >
+                  Items
+                </Button>
+                <Button
+                  variant="ghost"
+                  @click="editMenu(menu)"
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="danger"
+                  @click="deleteMenu(menu)"
+                >
+                  Delete
+                </Button>
               </div>
             </div>
           </li>
@@ -141,11 +139,12 @@
               />
             </div>
             <div>
-              <label class="form-label">Description</label>
-              <textarea
-                v-model="state.context.formData.description"
-                class="form-textarea"
-                rows="3"
+              <label class="form-label">Location</label>
+              <input
+                type="text"
+                v-model="state.context.formData.location"
+                class="form-input"
+                required
               />
             </div>
             <div class="flex items-center space-x-2">
@@ -155,14 +154,6 @@
                 class="form-checkbox"
               />
               <label class="form-label">Active</label>
-            </div>
-            <div class="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                v-model="state.context.formData.isPublic"
-                class="form-checkbox"
-              />
-              <label class="form-label">Public</label>
             </div>
           </div>
           <div class="flex justify-end space-x-2 mt-6">
@@ -186,133 +177,55 @@
       <!-- Menu Items Modal -->
       <Modal
         v-if="showItemsModal"
-        title="Manage Menu Items"
+        title="Menu Items"
         @close="showItemsModal = false"
       >
         <div class="space-y-4">
           <div class="flex justify-between items-center">
-            <h3 class="text-lg font-medium">Menu Items</h3>
+            <h3 class="text-lg font-medium text-gray-900">Items</h3>
             <Button
               variant="primary"
-              @click="editingItem = { label: '', url: '', roles: [], order: 0 }"
+              @click="addMenuItem"
             >
               Add Item
             </Button>
           </div>
-
-          <!-- Add/Edit Item Form -->
-          <div v-if="editingItem" class="bg-gray-50 p-4 rounded-md">
-            <form @submit.prevent="saveMenuItem">
-              <div class="space-y-4">
-                <div>
-                  <label class="form-label">Label</label>
-                  <input
-                    type="text"
-                    v-model="editingItem.label"
-                    class="form-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label class="form-label">URL</label>
-                  <input
-                    type="text"
-                    v-model="editingItem.url"
-                    class="form-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label class="form-label">Icon</label>
-                  <input
-                    type="text"
-                    v-model="editingItem.icon"
-                    class="form-input"                  
-                  />
-                </div>
-                <div class="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    v-model="editingItem.isActive"
-                    class="form-checkbox"
-                  />
-                  <label class="form-label">Active</label>
-                </div>
-                <div class="flex justify-end space-x-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    @click="editingItem = null"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                  >
-                    {{ editingItem._id ? 'Update' : 'Add' }}
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </div>
-
-          <!-- Items List -->
           <div class="space-y-2">
-            <div
-              v-for="item in menuItems"
-              :key="item._id"
-              class="flex items-center justify-between p-2 bg-white rounded-md border"
-            >
-              <div class="flex items-center space-x-2">
-                <span class="text-sm font-medium">{{ item.label }}</span>
-                <Badge
-                  :variant="item.isActive ? 'success' : 'warning'"
-                >
-                  {{ item.isActive ? 'Active' : 'Inactive' }}
-                </Badge>
-              </div>
-              <div class="flex space-x-2">
-                <Button
-                  variant="ghost"
-                  @click="editingItem = { ...item }"
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="danger"
-                  @click="deleteMenuItem(item._id || '')"
-                >
-                  Delete
-                </Button>
-              </div>
+            <div v-for="(item, index) in currentMenuItems" :key="index" class="flex items-center space-x-2 p-2 bg-gray-50 rounded">
+              <input
+                type="text"
+                v-model="item.label"
+                class="form-input flex-1"
+                placeholder="Label"
+              />
+              <input
+                type="text"
+                v-model="item.url"
+                class="form-input flex-1"
+                placeholder="URL"
+              />
+              <Button
+                variant="ghost"
+                @click="removeMenuItem(index)"
+              >
+                Remove
+              </Button>
             </div>
           </div>
-        </div>
-      </Modal>
-
-      <!-- Delete Confirmation Modal -->
-      <Modal
-        v-if="isCurrentState('deleting')"
-        title="Delete Menu"
-        @close="raiseEvent('CANCEL')"
-      >
-        <div class="space-y-4">
-          <p class="text-sm text-gray-500">
-            Are you sure you want to delete this menu? This action cannot be undone.
-          </p>
-          <div class="flex justify-end space-x-2">
+          <div class="flex justify-end space-x-2 mt-6">
             <Button
+              type="button"
               variant="ghost"
-              @click="raiseEvent('CANCEL')"
+              @click="showItemsModal = false"
             >
               Cancel
             </Button>
             <Button
-              variant="danger"
-              @click="confirmDelete"
+              type="button"
+              variant="primary"
+              @click="saveMenuItems"
             >
-              Delete
+              Save Items
             </Button>
           </div>
         </div>
@@ -323,7 +236,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { ListBulletIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
+import { ListBulletIcon, ExclamationCircleIcon, Bars3Icon } from '@heroicons/vue/24/outline';
 import Button from '../../../components/ui/button.vue';
 import Modal from '../../../components/ui/modal.vue';
 import Spinner from '../../../components/ui/spinner.vue';

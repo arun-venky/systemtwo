@@ -7,7 +7,7 @@ const toast = useToast()
 // Create axios instance
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  timeout: 30000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -21,6 +21,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    config.retryCount = config.retryCount || 0
     return config
   },
   (error) => {
@@ -74,20 +75,19 @@ api.interceptors.response.use(
       }
     }
     
-    // if (
-    //   (error.code === 'ECONNABORTED' || error.response?.status >= 500) &&
-    //   !originalRequest._retry &&
-    //   originalRequest.retryCount < 3
-    // ) {
-    //   originalRequest._retry = true;
-    //   originalRequest.retryCount = (originalRequest.retryCount || 0) + 1;
+    // Handle timeout and server errors with retry logic
+    if (
+      (error.code === 'ECONNABORTED' || error.response?.status >= 500) &&
+      originalRequest.retryCount < 3
+    ) {
+      originalRequest.retryCount = (originalRequest.retryCount || 0) + 1
       
-    //   // Exponential backoff
-    //   const delay = Math.pow(2, originalRequest.retryCount) * 1000;
-    //   await new Promise(resolve => setTimeout(resolve, delay));
+      // Exponential backoff
+      const delay = Math.pow(2, originalRequest.retryCount) * 1000
+      await new Promise(resolve => setTimeout(resolve, delay))
       
-    //   return api(originalRequest);
-    // }
+      return api(originalRequest)
+    }
 
     // Handle other errors
     handleApiError(error)

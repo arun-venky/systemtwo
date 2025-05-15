@@ -1,15 +1,15 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="management-view">
+    <div class="management-container">
       <!-- Header -->
-      <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Page Management</h1>
-        <div class="flex space-x-2">
+      <div class="management-header">
+        <h1 class="management-title">Page Management</h1>
+        <div class="management-actions">
           <input
             type="text"
             v-model="searchQuery"
             placeholder="Search pages..."
-            class="form-input"
+            class="form-input management-search"
           />
           <Button
             variant="primary"
@@ -22,7 +22,7 @@
       </div>
 
       <!-- Loading State -->
-      <div v-if="isCurrentState('loading')" class="flex justify-center items-center py-12">
+      <div v-if="isCurrentState('loading')" class="flex-center py-12">
         <Spinner size="lg" />
       </div>
 
@@ -45,82 +45,85 @@
       </div>
 
       <!-- Page List -->
-      <div v-else class="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul class="divide-y divide-gray-200">
-          <li v-for="page in filteredPages" :key="page._id">
-            <div class="px-4 py-4 sm:px-6">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                    <DocumentIcon class="h-6 w-6 text-gray-400" />
-                  </div>
-                  <div class="ml-4">
-                    <h2 class="text-lg font-medium text-gray-900">{{ page.title }}</h2>
-                    <p class="text-sm text-gray-500">
-                      {{ page.slug }}
-                    </p>
-                    <div class="mt-1 flex space-x-2">
-                      <Badge
-                        :variant="page.isPublished ? 'success' : 'warning'"
-                      >
-                        {{ page.isPublished ? 'Published' : 'Draft' }}
-                      </Badge>
-                      <Badge
-                        v-if="page.draft"
-                        variant="info"
-                      >
-                        Has Draft
-                      </Badge>
-                    </div>
+      <div v-else class="management-content">
+        <!-- Bulk Actions -->
+        <div v-if="selectedPages.length > 0" class="bulk-actions mb-4">
+          <div class="flex items-center space-x-4">
+            <span class="text-sm text-gray-600">
+              {{ selectedPages.length }} pages selected
+            </span>
+            <Button
+              variant="danger"
+              @click="bulkDelete"
+              :disabled="isCurrentState('deleting')"
+            >
+              Delete Selected
+            </Button>
+            <Button
+              variant="primary"
+              @click="bulkPublish"
+              :disabled="isCurrentState('loading')"
+            >
+              Publish Selected
+            </Button>
+            <Button
+              variant="warning"
+              @click="bulkUnpublish"
+              :disabled="isCurrentState('loading')"
+            >
+              Unpublish Selected
+            </Button>
+          </div>
+        </div>
+
+        <ul class="management-list">
+          <li v-for="page in filteredPages" :key="page._id" class="management-list-item">
+            <div class="management-list-header">
+              <div class="management-list-info">
+                <input
+                  type="checkbox"
+                  :value="page._id"
+                  v-model="selectedPages"
+                  class="form-checkbox mr-4"
+                />
+                <DocumentIcon class="management-list-icon" />
+                <div class="management-list-details">
+                  <h2 class="management-list-title">{{ page.title }}</h2>
+                  <p class="management-list-subtitle">{{ page.slug }}</p>
+                  <div class="management-list-badges">
+                    <Badge
+                      :variant="page.isPublished ? 'success' : 'warning'"
+                    >
+                      {{ page.isPublished ? 'Published' : 'Draft' }}
+                    </Badge>
+                    <Badge
+                      v-if="page.isPublic"
+                      variant="info"
+                    >
+                      Public
+                    </Badge>
                   </div>
                 </div>
-                <div class="flex space-x-2">
-                  <Button
-                    variant="ghost"
-                    @click="openVersionsModal(page)"
-                  >
-                    Versions
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    @click="openDraftModal(page)"
-                    :disabled="!page.draft"
-                  >
-                    Draft
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    @click="duplicatePage(page)"
-                  >
-                    Duplicate
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    @click="editPage(page)"
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    v-if="!page.isPublished"
-                    variant="success"
-                    @click="publishPage(page)"
-                  >
-                    Publish
-                  </Button>
-                  <Button
-                    v-else
-                    variant="warning"
-                    @click="unpublishPage(page)"
-                  >
-                    Unpublish
-                  </Button>
-                  <Button
-                    variant="danger"
-                    @click="deletePage(page)"
-                  >
-                    Delete
-                  </Button>
-                </div>
+              </div>
+              <div class="management-list-actions">
+                <Button
+                  variant="ghost"
+                  @click="previewPage(page)"
+                >
+                  Preview
+                </Button>
+                <Button
+                  variant="ghost"
+                  @click="editPage(page)"
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="danger"
+                  @click="deletePage(page)"
+                >
+                  Delete
+                </Button>
               </div>
             </div>
           </li>
@@ -133,51 +136,55 @@
         :title="isCurrentState('creating') ? 'Create Page' : 'Edit Page'"
         @close="raiseEvent('CANCEL')"
       >
-        <form @submit.prevent="savePage">
-          <div class="space-y-4">
-            <div>
-              <label class="form-label">Title</label>
-              <input
-                type="text"
-                v-model="state.context.formData.title"
-                class="form-input"
-                required
-              />
-            </div>
-            <div>
-              <label class="form-label">Slug</label>
-              <input
-                type="text"
-                v-model="state.context.formData.slug"
-                class="form-input"
-                required
-              />
-            </div>
-            <div>
-              <label class="form-label">Content</label>
-              <textarea
-                v-model="state.context.formData.content"
-                class="form-textarea"
-                rows="10"
-                required
-              ></textarea>
-            </div>
-            <div>
-              <label class="form-label">Parent Page</label>
-              <select
-                v-model="state.context.formData.parentId"
-                class="form-select"
-              >
-                <option value="">None</option>
-                <option
-                  v-for="page in state.context.pages"
-                  :key="page._id"
-                  :value="page._id"
-                >
-                  {{ page.title }}
-                </option>
-              </select>
-            </div>
+        <form @submit.prevent="savePage" class="space-y-4">
+          <div>
+            <label class="form-label">Title</label>
+            <input
+              type="text"
+              v-model="state.context.formData.title"
+              class="form-input"
+              :class="{ 'border-red-500': errors.title }"
+              required
+            />
+            <p v-if="errors.title" class="text-red-500 text-sm mt-1">{{ errors.title }}</p>
+          </div>
+          <div>
+            <label class="form-label">Slug</label>
+            <input
+              type="text"
+              v-model="state.context.formData.slug"
+              class="form-input"
+              :class="{ 'border-red-500': errors.slug }"
+              required
+            />
+            <p v-if="errors.slug" class="text-red-500 text-sm mt-1">{{ errors.slug }}</p>
+          </div>
+          <div>
+            <label class="form-label">Content</label>
+            <textarea
+              v-model="state.context.formData.content"
+              class="form-input"
+              :class="{ 'border-red-500': errors.content }"
+              rows="6"
+              required
+            ></textarea>
+            <p v-if="errors.content" class="text-red-500 text-sm mt-1">{{ errors.content }}</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              v-model="state.context.formData.isPublished"
+              class="form-checkbox"
+            />
+            <label class="form-label">Published</label>
+          </div>
+          <div class="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              v-model="state.context.formData.isPublic"
+              class="form-checkbox"
+            />
+            <label class="form-label">Public Access</label>
           </div>
           <div class="flex justify-end space-x-2 mt-6">
             <Button
@@ -190,105 +197,19 @@
             <Button
               type="submit"
               variant="primary"
+              :disabled="!isFormValid"
             >
               {{ isCurrentState('creating') ? 'Create' : 'Save' }}
             </Button>
           </div>
         </form>
       </Modal>
-
-      <!-- Versions Modal -->
-      <Modal
-        v-if="showVersionsModal"
-        title="Page Versions"
-        @close="showVersionsModal = false"
-      >
-        <div class="space-y-4">
-          <div v-for="version in selectedVersions" :key="version._id" class="flex items-center justify-between p-4 bg-gray-50 rounded">
-            <div>
-              <p class="text-sm text-gray-500">
-                {{ new Date(version.publishedAt).toLocaleString() }}
-              </p>
-              <p class="text-sm text-gray-500">
-                By {{ version.publishedBy }}
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              @click="restoreVersion(version._id)"
-            >
-              Restore
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <!-- Draft Modal -->
-      <Modal
-        v-if="showDraftModal"
-        title="Page Draft"
-        @close="showDraftModal = false"
-      >
-        <div class="space-y-4" v-if="currentDraft">
-          <div class="flex justify-between items-center">
-            <p class="text-sm text-gray-500">
-              Last saved: {{ new Date(currentDraft.lastSaved || '').toLocaleString() }}
-            </p>
-            <div class="flex space-x-2">
-              <Button
-                variant="danger"
-                @click="deleteDraft"
-              >
-                Delete Draft
-              </Button>
-              <Button
-                variant="primary"
-                @click="saveDraft(currentDraft.content || '')"
-              >
-                Save Draft
-              </Button>
-            </div>
-          </div>
-          <textarea
-            v-model="currentDraft.content"
-            class="form-textarea"
-            rows="10"
-          ></textarea>
-        </div>
-      </Modal>
-
-      <!-- Delete Confirmation Modal -->
-      <Modal
-        v-if="isCurrentState('deleting')"
-        title="Delete Page"
-        @close="raiseEvent('CANCEL')"
-      >
-        <div class="space-y-4">
-          <p class="text-sm text-gray-500">
-            Are you sure you want to delete this page? This action cannot be undone.
-          </p>
-          <div class="flex justify-end space-x-2">
-            <Button
-              variant="ghost"
-              @click="raiseEvent('CANCEL')"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              @click="confirmDelete"
-            >
-              Delete
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { DocumentIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
 import Button from '../../../components/ui/button.vue';
 import Modal from '../../../components/ui/modal.vue';
@@ -322,6 +243,115 @@ const {
   confirmDelete,
   savePage
 } = usePageManagement();
+
+// Form validation
+const errors = ref({
+  title: '',
+  slug: '',
+  content: ''
+});
+
+const validateForm = () => {
+  errors.value = {
+    title: '',
+    slug: '',
+    content: ''
+  };
+
+  if (!state.value.context.formData.title) {
+    errors.value.title = 'Title is required';
+  }
+
+  if (!state.value.context.formData.slug) {
+    errors.value.slug = 'Slug is required';
+  } else {
+    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    if (!slugRegex.test(state.value.context.formData.slug)) {
+      errors.value.slug = 'Slug must contain only lowercase letters, numbers, and hyphens';
+    }
+  }
+
+  if (!state.value.context.formData.content) {
+    errors.value.content = 'Content is required';
+  }
+
+  return !Object.values(errors.value).some(error => error);
+};
+
+const isFormValid = computed(() => {
+  return validateForm();
+});
+
+// Bulk actions
+const bulkDelete = async () => {
+  if (!selectedPages.value.length) return;
+  
+  if (confirm(`Are you sure you want to delete ${selectedPages.value.length} pages?`)) {
+    try {
+      await pageStore.managePages(
+        selectedPages.value.map(id => ({
+          action: 'delete',
+          id
+        }))
+      );
+      selectedPages.value = [];
+      raiseEvent('FETCH');
+    } catch (error) {
+      console.error('Failed to delete pages:', error);
+    }
+  }
+};
+
+const bulkPublish = async () => {
+  if (!selectedPages.value.length) return;
+  
+  try {
+    await pageStore.managePages(
+      selectedPages.value.map(id => ({
+        action: 'publish',
+        id
+      }))
+    );
+    selectedPages.value = [];
+    raiseEvent('FETCH');
+  } catch (error) {
+    console.error('Failed to publish pages:', error);
+  }
+};
+
+const bulkUnpublish = async () => {
+  if (!selectedPages.value.length) return;
+  
+  try {
+    await pageStore.managePages(
+      selectedPages.value.map(id => ({
+        action: 'unpublish',
+        id
+      }))
+    );
+    selectedPages.value = [];
+    raiseEvent('FETCH');
+  } catch (error) {
+    console.error('Failed to unpublish pages:', error);
+  }
+};
+
+// Computed
+const selectAll = computed({
+  get: () => selectedPages.value.length === filteredPages.value.length,
+  set: (value) => {
+    selectedPages.value = value ? filteredPages.value.map(page => page._id) : [];
+  }
+});
+
+// Methods
+const toggleSelectAll = () => {
+  if (selectAll.value) {
+    selectedPages.value = filteredPages.value.map(page => page._id);
+  } else {
+    selectedPages.value = [];
+  }
+};
 
 // Fetch pages on mount
 onMounted(() => {

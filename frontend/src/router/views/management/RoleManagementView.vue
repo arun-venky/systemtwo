@@ -1,16 +1,18 @@
 <template>
-  <div class="page-container">
-    <div class="section">
+  <div class="management-view">
+    <div class="management-container">
       <!-- Header -->
-      <div class="flex-between mb-6">
-        <h1 class="section-title">Role Management</h1>
-        <Button
-          variant="primary"
-          @click="raiseEvent('CREATE')"
-          :disabled="isCurrentState('creating')"
-        >
-          Create Role
-        </Button>
+      <div class="management-header">
+        <h1 class="management-title">Role Management</h1>
+        <div class="management-actions">
+          <Button
+            variant="primary"
+            @click="raiseEvent('CREATE')"
+            :disabled="isCurrentState('creating')"
+          >
+            Create Role
+          </Button>
+        </div>
       </div>
 
       <!-- Loading State -->
@@ -37,54 +39,50 @@
       </div>
 
       <!-- Role List -->
-      <div v-else class="card">
-        <ul class="divide-y divide-gray-200">
-          <li v-for="role in state.context.roles" :key="role._id">
-            <div class="px-4 py-4 sm:px-6">
-              <div class="flex-between">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                    <ShieldCheckIcon class="h-6 w-6 text-gray-400" />
-                  </div>
-                  <div class="ml-4">
-                    <h2 class="text-lg font-medium text-gray-900">{{ role.name }}</h2>
-                    <p class="text-sm text-gray-500">
-                      {{ role.permissions.length }} permissions
-                    </p>
-                  </div>
+      <div v-else class="management-content">
+        <ul class="management-list">
+          <li v-for="role in state.context.roles" :key="role._id" class="management-list-item">
+            <div class="management-list-header">
+              <div class="management-list-info">
+                <ShieldCheckIcon class="management-list-icon" />
+                <div class="management-list-details">
+                  <h2 class="management-list-title">{{ role.name }}</h2>
+                  <p class="management-list-subtitle">
+                    {{ role.permissions.length }} permissions
+                  </p>
                 </div>
-                <div class="flex space-x-2">
-                  <Button
-                    variant="ghost"
-                    @click="openPermissionsModal(role)"
-                  >
-                    Permissions
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    @click="openUsersModal(role)"
-                  >
-                    Users
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    @click="duplicateRole(role)"
-                  >
-                    Duplicate
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    @click="editRole(role)"
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    @click="deleteRole(role)"
-                  >
-                    Delete
-                  </Button>
-                </div>
+              </div>
+              <div class="management-list-actions">
+                <Button
+                  variant="ghost"
+                  @click="openPermissionsModal(role)"
+                >
+                  Permissions
+                </Button>
+                <Button
+                  variant="ghost"
+                  @click="openUsersModal(role)"
+                >
+                  Users
+                </Button>
+                <Button
+                  variant="ghost"
+                  @click="duplicateRole(role)"
+                >
+                  Duplicate
+                </Button>
+                <Button
+                  variant="ghost"
+                  @click="editRole(role)"
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="danger"
+                  @click="deleteRole(role)"
+                >
+                  Delete
+                </Button>
               </div>
             </div>
           </li>
@@ -109,40 +107,24 @@
               />
             </div>
             <div>
+              <label class="form-label">Description</label>
+              <textarea
+                v-model="state.context.formData.description"
+                class="form-textarea"
+                rows="3"
+              ></textarea>
+            </div>
+            <div>
               <label class="form-label">Permissions</label>
               <div class="space-y-2">
                 <div v-for="(permission, index) in state.context.formData.permissions" :key="index" class="flex items-center space-x-2">
                   <input
-                    type="text"
-                    v-model="permission.resource"
-                    placeholder="Resource"
-                    class="form-input flex-1"
+                    type="checkbox"
+                    v-model="permission.enabled"
+                    class="form-checkbox"
                   />
-                  <select
-                    v-model="permission.actions"
-                    multiple
-                    class="form-select flex-1"
-                  >
-                    <option value="create">Create</option>
-                    <option value="read">Read</option>
-                    <option value="update">Update</option>
-                    <option value="delete">Delete</option>
-                  </select>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    @click="removePermission(index)"
-                  >
-                    Remove
-                  </Button>
+                  <span class="text-sm text-gray-700">{{ permission.name }}</span>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  @click="addPermission"
-                >
-                  Add Permission
-                </Button>
               </div>
             </div>
           </div>

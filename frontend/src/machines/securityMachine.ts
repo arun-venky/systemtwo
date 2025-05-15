@@ -10,6 +10,12 @@ interface SecurityContext {
   errorMessage: string | null;
   isLoading: boolean;
   filters: AuditLogFilters | null;
+  pagination: {
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalCount: number;
+  };
 }
 
 type SecurityEvent =
@@ -40,6 +46,12 @@ export const createSecurityMachine = (initialContext: Partial<SecurityContext> =
       errorMessage: null,
       isLoading: false,
       filters: null,
+      pagination: {
+        page: 1,
+        limit: 10,
+        totalPages: 0,
+        totalCount: 0
+      },
       ...initialContext
     },
     states: {
@@ -52,33 +64,7 @@ export const createSecurityMachine = (initialContext: Partial<SecurityContext> =
       },
       loading: {
         entry: assign({ isLoading: true }),
-        invoke: {          
-          src: 'getSecuritySettings',
-          onDone: {
-            target: 'idle',
-            actions: ['setSettings']
-          },
-          onError: {
-            target: 'error',
-            actions: ['setError']
-          }
-        }  
-      },
-      editing: {
-        invoke: {          
-          src: 'editSecuritySettings',
-          onDone: {
-            target: 'idle',
-            actions: ['setSettings']
-          },
-          onError: {
-            target: 'error',
-            actions: ['setError']
-          }
-        }  
-      },
-      gettingLogs: {
-        invoke: {          
+        invoke: {
           src: 'getAuditLogs',
           onDone: {
             target: 'idle',
@@ -87,6 +73,52 @@ export const createSecurityMachine = (initialContext: Partial<SecurityContext> =
           onError: {
             target: 'error',
             actions: ['setError']
+          }
+        }
+      },
+      editing: {
+        invoke: {          
+          src: 'editSecuritySettings',
+          onDone: {
+            target: 'idle',
+            actions: assign({
+              settings: (_, event) => event.data,
+              isLoading: false,
+              errorMessage: null
+            })
+          },
+          onError: {
+            target: 'error',
+            actions: assign({
+              errorMessage: (_, event) => event.data?.message || 'Failed to update security settings',
+              isLoading: false
+            })
+          }
+        }  
+      },
+      gettingLogs: {
+        invoke: {          
+          src: 'getAuditLogs',
+          onDone: {
+            target: 'idle',
+            actions: assign({
+              auditLogs: (_, event) => event.data.logs || [],
+              pagination: (_, event) => ({
+                page: event.data.page || 1,
+                limit: event.data.limit || 10,
+                totalPages: event.data.totalPages || 0,
+                totalCount: event.data.count || 0
+              }),
+              isLoading: false,
+              errorMessage: null
+            })
+          },
+          onError: {
+            target: 'error',
+            actions: assign({
+              errorMessage: (_, event) => event.data?.message || 'Failed to fetch audit logs',
+              isLoading: false
+            })
           }
         }  
       },
@@ -99,47 +131,21 @@ export const createSecurityMachine = (initialContext: Partial<SecurityContext> =
         }
       }
     }
-  }, {
-    actions: {
-      setSettings: assign({       
-        settings: (context, event) => {
-          // if (event.type === 'FETCH' || event.type === 'UPDATE_SETTINGS') {
-          //   return event.data;
-          // }
-          return context.settings;
-        },
-        isLoading: (_) => false,
-        errorMessage: (_) => null
-      }),
-      setAuditLogs: assign({
-        auditLogs: (context, event) => {
-          // if (event.type === 'GET_AUDIT_LOGS') {
-          //   return event.data;
-          // }
-          return context.auditLogs;
-        },
-        errorMessage: (_) => null
-      }),
-      setError: assign({
-        errorMessage: (_, event) => {
-          const error = 'Operation failed';
-          console.error('Security Error:', error);
-          return error;
-        },
-        isLoading: (_) => false        
-      }),
-    },
+  },
+  {
     services: {
+      getAuditLogs: async (context, event) => {
+        if ('filters' in event) {
+          return await securityStore.getAuditLogs(event.filters);
+        }
+        throw new Error('No filters provided');
+      },
       getSecuritySettings: async () => {
         return await securityStore.getSecuritySettings();
       },
       editSecuritySettings: async (context, event) => {
         if (event.type !== 'UPDATE_SETTINGS') return;
         return await securityStore.updateSecuritySettings(event.settings);
-      },
-      getAuditLogs: async (context, event) => {
-        if (event.type !== 'GET_AUDIT_LOGS') return;
-        return await securityStore.getAuditLogs(event.filters);
       }
     }
   });

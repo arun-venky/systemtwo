@@ -1,16 +1,32 @@
-import { PageContext } from '@/store/models';
-import { usePageStore } from '../store/page.store'
-import { createMachine, assign } from 'xstate'
+import { createMachine, assign } from 'xstate';
+import { usePageStore } from '../store/page.store';
+import { Page } from '@/store/models';
 
 // Define interfaces
+export interface PageContext {
+  pages: Page[];
+  selectedPage: Page | null;
+  errorMessage: string | null;
+  isLoading: boolean;
+  formData: {
+    title: string;
+    content: string;
+    slug: string;
+    parentId: string;
+  };
+}
+
 export type PageEvent =
   | { type: 'FETCH' }
   | { type: 'CREATE' }
   | { type: 'EDIT'; id: string }
   | { type: 'DELETE'; id: string }
-  | { type: 'SAVE'; data: any }
+  | { type: 'CONFIRM_DELETE' }
+  | { type: 'SAVE' }
   | { type: 'CANCEL' }
   | { type: 'RETRY' }
+  | { type: 'DONE'; data: { pages: Page[] } }
+  | { type: 'ERROR'; data: { message: string } };
 
 export type PageState =
   | { value: 'idle'; context: PageContext }
@@ -18,7 +34,7 @@ export type PageState =
   | { value: 'creating'; context: PageContext }
   | { value: 'editing'; context: PageContext }
   | { value: 'deleting'; context: PageContext }
-  | { value: 'error'; context: PageContext }
+  | { value: 'error'; context: PageContext };
 
 // Create page management machine
 export const createPageMachine = (initialContext: Partial<PageContext> = {}) => {
@@ -89,11 +105,11 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
       },
       editing: {
         entry: assign({
-          formData: (context) => ({ 
+          formData: (context) => ({
             title: context.selectedPage?.title || '',
             content: context.selectedPage?.content || '',
             slug: context.selectedPage?.slug || '',
-            parentId: context.selectedPage?.parentId || ''
+            parentId: context.selectedPage?.parentId || '',
           })
         }),
         on: {
@@ -105,10 +121,11 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
         }
       },
       deleting: {
+        entry: assign({ isLoading: true }),
         invoke: {
           src: 'deletePage',
           onDone: {
-            target: 'loading',
+            target: 'idle',
             actions: ['removePage']
           },
           onError: {
@@ -125,13 +142,32 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
       }
     }
   }, {
+    services: {
+      fetchPages: async () => {
+        try {
+          return await pageStore.fetchPages();
+        } catch (error) {
+          throw error;
+        }
+      },
+      deletePage: async (context) => {
+        if (!context.selectedPage?._id) {
+          throw new Error('No page selected for deletion');
+        }
+        try {
+          await pageStore.deletePage(context.selectedPage._id);
+        } catch (error) {
+          throw error;
+        }
+      }
+    },
     actions: {
       setPages: assign({
         pages: (_, event) => {
-          if ('data' in event) {
-            return event.data.pages || []
+          if (event.type === 'DONE') {
+            return event.data.pages;
           }
-          return []
+          return [];
         },
         isLoading: (_) => false,
         errorMessage: (_) => null
@@ -139,98 +175,51 @@ export const createPageMachine = (initialContext: Partial<PageContext> = {}) => 
       selectPage: assign({
         selectedPage: (context, event) => {
           if ('id' in event) {
-            return context.pages.find(page => page._id === event.id) || null
+            return context.pages.find(page => page._id === event.id) || null;
           }
-          return null
+          return null;
         }
       }),
       removePage: assign({
         pages: (context) => {
           if (context.selectedPage && context.selectedPage._id) {
-            return context.pages.filter(page => page._id !== context.selectedPage?._id)
+            return context.pages.filter(page => page._id !== context.selectedPage?._id);
           }
-          return context.pages
+          return context.pages;
         },
-        selectedPage: (_) => null
+        selectedPage: (_) => null,
+        isLoading: (_) => false,
+        errorMessage: (_) => null
       }),
       setError: assign({
         errorMessage: (_, event) => {
-          if ('data' in event) {
-            const error = event.data.message || 'Operation failed'
-            console.error('Page Error:', error)
-            return error
+          if (event.type === 'ERROR') {
+            const error = event.data.message;
+            console.error('Page Error:', error);
+            return error;
           }
-          console.error('Page Error: Operation failed')
-          return 'Operation failed'
+          console.error('Page Error: Operation failed');
+          return 'Operation failed';
         },
         isLoading: (_) => false
-      }),      
-    },
-    services: {
-      fetchPages: async () => {
-        try {
-          return await pageStore.fetchPages()
-        } catch (error) {
-          console.error('Page Error: Failed to fetch pages', error)
-          throw error
-        }
-      },
-      deletePage: async (context) => {
-        if (!context.selectedPage || !context.selectedPage._id) {
-          console.error('Page Error: No page selected for deletion')
-          return Promise.reject('No page selected')
-        }
-        
-        try {
-          return await pageStore.deletePage(context.selectedPage._id)
-        } catch (error) {
-          console.error('Page Error: Failed to delete page', error)
-          throw error
-        }
-      },
+      }),
       createPage: async (context) => {
-        // Validate page data
-        if (!context.formData.title || !context.formData.slug) {
-          console.error('Page Error: Missing required fields (title or slug)')
-          return Promise.reject('Missing required fields')
-        }
-
-        // Validate slug format
-        const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-        if (!slugRegex.test(context.formData.slug)) {
-          console.error('Page Error: Invalid slug format')
-          return Promise.reject('Invalid slug format')
-        }
-
         try {
-          return await pageStore.createPage(context.formData)
+          await pageStore.createPage(context.formData);
         } catch (error) {
-          console.error('Page Error: Failed to create page', error)
-          throw error
+          throw error;
         }
       },
       updatePage: async (context) => {
-        if (!context.selectedPage) {
-          console.error('Page Error: No page selected for update')
-          return Promise.reject('No page selected')
+        if (!context.selectedPage?._id) {
+          throw new Error('No page selected for update');
         }
-
-        // Validate update data
-        if (context.formData.slug) {
-          const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-          if (!slugRegex.test(context.formData.slug)) {
-            console.error('Page Error: Invalid slug format')
-            return Promise.reject('Invalid slug format')
-          }
-        }
-        
         try {
-          return await pageStore.updatePage(context.selectedPage._id, context.formData)          
+          await pageStore.updatePage(context.selectedPage._id, context.formData);
         } catch (error) {
-          console.error('Page Error: Failed to update page', error)
-          throw error
+          throw error;
         }
       }
     }
-  })
-}
+  });
+};
