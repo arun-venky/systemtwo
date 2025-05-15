@@ -1,5 +1,4 @@
-<template>
-  <DashboardLayout>    
+<template>  
     <div class="section">
       <h1 class="section-title">Dashboard</h1>
     </div>
@@ -170,8 +169,7 @@
           </ul>
         </Card>
       </div>
-    </div>
-  </DashboardLayout>
+    </div>  
 </template>
 
 <script setup lang="ts">

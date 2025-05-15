@@ -202,27 +202,27 @@ function formatDate(date: Date) {
 // Admin routes (should match your router config)
 const adminRoutes = [
   {
-    path: '/menus',
+    path: '/admin/menus',
     name: 'menu-management',
     meta: { title: 'Menu Management', icon: ListBulletIcon }
   },
   {
-    path: '/users',
+    path: '/admin/users',
     name: 'user-management',
     meta: { title: 'User Management', icon: UserIcon }
   },
   {
-    path: '/roles',
+    path: '/admin/roles',
     name: 'role-management',
     meta: { title: 'Role Management', icon: ShieldCheckIcon }
   },
   {
-    path: '/security',
+    path: '/admin/security',
     name: 'security-management',
     meta: { title: 'Security Management', icon: LockClosedIcon }
   },
   {
-    path: '/pages',
+    path: '/admin/pages',
     name: 'page-management',
     meta: { title: 'Page Management', icon: DocumentIcon }
   }

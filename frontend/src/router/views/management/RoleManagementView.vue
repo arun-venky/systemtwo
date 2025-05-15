@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="page-container">
+    <div class="section">
       <!-- Header -->
-      <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Role Management</h1>
+      <div class="flex-between mb-6">
+        <h1 class="section-title">Role Management</h1>
         <Button
           variant="primary"
           @click="raiseEvent('CREATE')"
@@ -14,7 +14,7 @@
       </div>
 
       <!-- Loading State -->
-      <div v-if="isCurrentState('loading')" class="flex justify-center items-center py-12">
+      <div v-if="isCurrentState('loading')" class="flex-center py-12">
         <Spinner size="lg" />
       </div>
 
@@ -37,11 +37,11 @@
       </div>
 
       <!-- Role List -->
-      <div v-else class="bg-white shadow overflow-hidden sm:rounded-md">
+      <div v-else class="card">
         <ul class="divide-y divide-gray-200">
           <li v-for="role in state.context.roles" :key="role._id">
             <div class="px-4 py-4 sm:px-6">
-              <div class="flex items-center justify-between">
+              <div class="flex-between">
                 <div class="flex items-center">
                   <div class="flex-shrink-0">
                     <ShieldCheckIcon class="h-6 w-6 text-gray-400" />
@@ -198,61 +198,22 @@
               type="text"
               v-model="userSearchQuery"
               placeholder="Search users..."
-              class="form-input flex-1"
+              class="form-input"
             />
-            <Button
-              variant="primary"
-              @click="assignUsers"
-              :disabled="!selectedUsers.length"
-            >
-              Assign Selected
-            </Button>
-            <Button
-              variant="danger"
-              @click="removeUsers"
-              :disabled="!selectedUsers.length"
-            >
-              Remove Selected
-            </Button>
           </div>
           <div class="space-y-2">
-            <div v-for="user in filteredUsers" :key="user._id" class="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                :value="user._id"
-                v-model="selectedUsers"
-                class="form-checkbox"
-              />
-              <span>{{ user.username }}</span>
-              <span class="text-gray-500">({{ user.email }})</span>
+            <div v-for="user in filteredUsers" :key="user._id" class="flex items-center justify-between">
+              <div class="flex items-center">
+                <UserIcon class="h-5 w-5 text-gray-400 mr-2" />
+                <span>{{ user.username }}</span>
+              </div>
+              <Button
+                variant="ghost"
+                @click="removeUserFromRole(user)"
+              >
+                Remove
+              </Button>
             </div>
-          </div>
-        </div>
-      </Modal>
-
-      <!-- Delete Confirmation Modal -->
-      <Modal
-        v-if="isCurrentState('deleting')"
-        title="Delete Role"
-        @close="raiseEvent('CANCEL')"
-      >
-        <div class="space-y-4">
-          <p class="text-sm text-gray-500">
-            Are you sure you want to delete this role? This action cannot be undone.
-          </p>
-          <div class="flex justify-end space-x-2">
-            <Button
-              variant="ghost"
-              @click="raiseEvent('CANCEL')"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              @click="confirmDelete"
-            >
-              Delete
-            </Button>
           </div>
         </div>
       </Modal>
@@ -262,7 +223,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { ShieldCheckIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
+import { ShieldCheckIcon, ExclamationCircleIcon, UserIcon } from '@heroicons/vue/24/outline';
 import Button from '../../../components/ui/button.vue';
 import Modal from '../../../components/ui/modal.vue';
 import Spinner from '../../../components/ui/spinner.vue';
@@ -291,7 +252,8 @@ const {
   confirmDelete,
   addPermission,
   removePermission,
-  saveRole
+  saveRole,
+  removeUserFromRole
 } = useRoleManagement();
 
 // Fetch roles on mount

@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="page-container">
+    <div class="section">
       <!-- Header -->
-      <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">User Management</h1>
+      <div class="flex-between mb-6">
+        <h1 class="section-title">User Management</h1>
         <div class="flex space-x-2">
           <input
             type="text"
@@ -22,7 +22,7 @@
       </div>
 
       <!-- Loading State -->
-      <div v-if="isCurrentState('loading')" class="flex justify-center items-center py-12">
+      <div v-if="isCurrentState('loading')" class="flex-center py-12">
         <Spinner size="lg" />
       </div>
 
@@ -45,36 +45,38 @@
       </div>
 
       <!-- User List -->
-      <div v-else class="bg-white shadow overflow-hidden sm:rounded-md">
-        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-          <div class="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              v-model="selectAll"
-              class="form-checkbox"
-              @change="toggleSelectAll"
-            />
-            <span class="text-sm text-gray-500">Select All</span>
-          </div>
-          <div v-if="selectedUsers.length" class="flex space-x-2">
-            <Button
-              variant="danger"
-              @click="raiseEvent('BULK_DELETE')"
-            >
-              Delete Selected
-            </Button>
-            <Button
-              variant="primary"
-              @click="showBulkRolesModal = true"
-            >
-              Assign Roles
-            </Button>
+      <div v-else class="card">
+        <div class="card-header">
+          <div class="flex-between">
+            <div class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                v-model="selectAll"
+                class="form-checkbox"
+                @change="toggleSelectAll"
+              />
+              <span class="text-sm text-gray-500">Select All</span>
+            </div>
+            <div v-if="selectedUsers.length" class="flex space-x-2">
+              <Button
+                variant="danger"
+                @click="raiseEvent('BULK_DELETE')"
+              >
+                Delete Selected
+              </Button>
+              <Button
+                variant="primary"
+                @click="showBulkRolesModal = true"
+              >
+                Assign Roles
+              </Button>
+            </div>
           </div>
         </div>
         <ul class="divide-y divide-gray-200">
           <li v-for="user in filteredUsers" :key="user._id">
             <div class="px-4 py-4 sm:px-6">
-              <div class="flex items-center justify-between">
+              <div class="flex-between">
                 <div class="flex items-center">
                   <input
                     type="checkbox"
@@ -198,15 +200,18 @@
               />
             </div>
             <div>
-              <label class="form-label">Role</label>
-              <select
-                v-model="state.context.formData.role"
-                class="form-select"
-                required
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
+              <label class="form-label">Roles</label>
+              <div class="space-y-2">
+                <div v-for="role in availableRoles" :key="role._id" class="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    :value="role._id"
+                    v-model="state.context.formData.roles"
+                    class="form-checkbox"
+                  />
+                  <span>{{ role.name }}</span>
+                </div>
+              </div>
             </div>
           </div>
           <div class="flex justify-end space-x-2 mt-6">
@@ -234,27 +239,16 @@
         @close="showRolesModal = false"
       >
         <div class="space-y-4">
-          <div v-for="role in availableRoles" :key="role._id" class="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              :value="role._id"
-              v-model="selectedRoles"
-              class="form-checkbox"
-            />
-            <span>{{ role.name }}</span>
-          </div>
-          <div class="flex justify-end space-x-2">
+          <div v-for="role in selectedUserRoles" :key="role._id" class="flex items-center justify-between">
+            <div class="flex items-center">
+              <ShieldCheckIcon class="h-5 w-5 text-gray-400 mr-2" />
+              <span>{{ role.name }}</span>
+            </div>
             <Button
               variant="ghost"
-              @click="showRolesModal = false"
+              @click="removeRoleFromUser(role)"
             >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              @click="saveRoles"
-            >
-              Save Roles
+              Remove
             </Button>
           </div>
         </div>
@@ -267,7 +261,7 @@
         @close="showPermissionsModal = false"
       >
         <div class="space-y-4">
-          <div v-for="permission in userPermissions" :key="permission.resource" class="flex items-center space-x-2">
+          <div v-for="(permission, index) in selectedUserPermissions" :key="index" class="flex items-center space-x-2">
             <span class="font-medium">{{ permission.resource }}</span>
             <div class="flex space-x-1">
               <Badge
@@ -293,50 +287,26 @@
             <input
               type="checkbox"
               :value="role._id"
-              v-model="selectedBulkRoles"
+              v-model="selectedRoles"
               class="form-checkbox"
             />
             <span>{{ role.name }}</span>
           </div>
-          <div class="flex justify-end space-x-2">
+          <div class="flex justify-end space-x-2 mt-6">
             <Button
+              type="button"
               variant="ghost"
               @click="showBulkRolesModal = false"
             >
               Cancel
             </Button>
             <Button
+              type="button"
               variant="primary"
-              @click="saveBulkRoles"
+              @click="assignRolesToUsers"
+              :disabled="!selectedRoles.length"
             >
               Assign Roles
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <!-- Delete Confirmation Modal -->
-      <Modal
-        v-if="isCurrentState('deleting')"
-        title="Delete User"
-        @close="raiseEvent('CANCEL')"
-      >
-        <div class="space-y-4">
-          <p class="text-sm text-gray-500">
-            Are you sure you want to delete this user? This action cannot be undone.
-          </p>
-          <div class="flex justify-end space-x-2">
-            <Button
-              variant="ghost"
-              @click="raiseEvent('CANCEL')"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              @click="confirmDelete"
-            >
-              Delete
             </Button>
           </div>
         </div>
@@ -347,7 +317,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { UserIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
+import { UserIcon, ExclamationCircleIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline';
 import Button from '../../../components/ui/button.vue';
 import Modal from '../../../components/ui/modal.vue';
 import Spinner from '../../../components/ui/spinner.vue';

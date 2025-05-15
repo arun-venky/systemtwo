@@ -4,6 +4,7 @@ import type { RouteRecordRaw } from 'vue-router'
 
 // Layout components
 import DashboardLayout from '../router/layouts/DashboardLayout.vue';
+import AdminLayout from '../router/layouts/AdminLayout.vue';
 
 // Auth views
 import LoginView from '../router/views/auth/LoginView.vue'
@@ -25,9 +26,6 @@ import UserManagementView from '../router/views/management/UserManagementView.vu
 import ForbiddenView from '../router/views/errors/ForbiddenView.vue'
 import NotFoundView from '../router/views/errors/NotFoundView.vue'
 import UnauthorizedView from '../router/views/errors/UnauthorizedView.vue'
-
-// Import layouts
-import AdminLayout from '../router/layouts/AdminLayout.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -101,6 +99,17 @@ const routes: RouteRecordRaw[] = [
           permissions: ['security', 'read']
         }
       }
+    ]
+  },
+  {
+    path: '/admin',
+    component: AdminLayout,
+    meta: { 
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Admin'
+    },
+    children: [     
     ]
   },
   {
@@ -211,40 +220,18 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // Check if route requires admin role
+  // Check admin access
   if (requiresAdmin && !authStore.isAdmin) {
-    console.log('Admin role required, redirecting to unauthorized')
-    next({ 
-      name: 'unauthorized',
-      query: { 
-        requiredRole: 'admin',
-        path: to.fullPath 
-      }
-    })
+    next({ name: 'unauthorized' })
     return
   }
 
-  // Check if route requires specific permissions
-  if (requiresPermission) {
-    const hasPermission = requiresPermission.every(permission => 
-      authStore.hasPermission(permission)
-    )
-    console.log('Permission check:', {
-      required: requiresPermission,
-      hasPermission
-    })
-    if (!hasPermission) {
-      next({ 
-        name: 'unauthorized',
-        query: { 
-          requiredPermissions: requiresPermission.join(','),
-          path: to.fullPath 
-        }
-      })
-      return
-    }
-  }
-
+  // // Check permissions
+  // if (requiresPermission && !requiresPermission.every(permission => authStore.hasPermission(permission))) {
+  //   next({ name: 'unauthorized' })
+  //   return
+  // }
+  console.log('able to access')
   next()
 })
 
